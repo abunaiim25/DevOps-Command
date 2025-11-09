@@ -1,0 +1,51 @@
+--------------------------Docker Volume----------------------------
+
+----- Create Volume and share by Dockerfile -----
+# vi Dockerfile
+  FROM ubuntu
+  VOLUME ["/MyVolume"]
+
+# docker build -t myimage .
+  
+# docker run -it --name container1 myimage /bin/bash
+  ls
+  cd MyVolume
+  touch file{1..3}
+  exit
+  
+# docker run -it --name container2 --privileged=true --volumes-from container1 ubuntu /bin/bash
+  ls
+  cd MyVolume/
+  echo "hello" > file1
+  cat file1
+  exit
+  
+# docker start container1
+  cd MyVolume/
+  cat file1
+  
+----- Create Volume and share by command -----
+# docker run -it --name container3 -v /myvolume2 ubuntu /bin/bash
+  ls
+  cd MyVolume
+  touch file{1..3}
+  exit
+
+# docker run -it --name container4 --privileged=true --volumes-from container3 ubuntu /bin/bash
+  ls
+  cd MyVolume/
+  echo "hello" > file1
+  cat file1
+  exit
+  
+# docker start container3
+  cd MyVolume/
+  cat file1
+  
+  
+----- Volume (Host to Container) -----
+# pwd === /home/naiim
+  docker run -it --name hostcontainer -v /home/naiim:/aminaiim --privileged=true ubuntu /bin/bash
+  ls
+  exit
+ 

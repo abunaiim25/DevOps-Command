@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: all-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multi-service
+  template:
+    metadata:
+      labels:
+        app: multi-service
+    spec:
+      containers:
+        - name: bida-moha-api
+          image: your-docker-repo/bida-moha-api:latest
+          ports:
+            - containerPort: 8080
+        - name: bidaapi
+          image: your-docker-repo/bidaapi:latest
+          ports:
+            - containerPort: 8081
+        - name: redis
+          image: redis:7
+          ports:
+            - containerPort: 6379
+

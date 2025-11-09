@@ -1,0 +1,8 @@
+Source: https://github.com/iam-veeramalla/Jenkins-Zero-To-Hero/blob/main/README.md
+
+
+docker-compose up -d
+
+docker exec -it jenkins bash
+apt-get update
+apt-get install -y git docker.io curl

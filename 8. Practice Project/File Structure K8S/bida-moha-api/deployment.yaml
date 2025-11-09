@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bida-moha-api
+  labels:
+    app: bida-moha-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bida-moha-api
+  template:
+    metadata:
+      labels:
+        app: bida-moha-api
+    spec:
+      containers:
+        - name: bida-moha-api
+          image: your-docker-repo/bida-moha-api:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENV
+              value: "production"

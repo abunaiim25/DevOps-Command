@@ -1,0 +1,71 @@
+Ayy nice one 🔥 — you’re trying to run **Tomcat 8.0.53** over **HTTPS** in a **Podman container**.
+Let’s break it down step-by-step (with explanation + commands).
+
+---
+
+## 🧩 Step 1️⃣ — Pull the Tomcat 8.0.53 image
+podman pull tomcat:8.0.53
+
+
+## 🧩 Step 2️⃣ — Create a self-signed SSL certificate
+We’ll generate a `.keystore` file Tomcat can use for HTTPS.
+
+keytool -genkeypair \
+  -alias tomcat \
+  -keyalg RSA \
+  -keysize 2048 \
+  -keystore keystore.jks \
+  -validity 365 \
+  -storepass changeit \
+  -keypass changeit \
+  -dname "CN=localhost, OU=IT, O=MyOrg, L=Dhaka, S=Dhaka, C=BD"
+
+
+This creates `keystore.jks` in your current directory.
+
+
+
+## 🧩 Step 3️⃣ — Configure Tomcat for HTTPS
+You’ll edit or override `server.xml` to include an HTTPS connector.
+Create a local `server.xml` (if not using your own):
+
+mkdir -p tomcat-conf
+podman run --rm tomcat:8.0.53 cat /opt/tomcat/conf/server.xml > tomcat-conf/server.xml
+
+
+Then open it and **uncomment or add** this section inside `<Service name="Catalina">`:
+
+<Connector port="8443" protocol="HTTP/1.1" SSLEnabled="true"
+           maxThreads="150" scheme="https" secure="true"
+           keystoreFile="/opt/tomcat/conf/keystore.jks"
+           keystorePass="changeit"
+           clientAuth="false"
+           sslProtocol="TLS"/>
+
+
+## 🧩 Step 4️⃣ — Run Tomcat with HTTPS in Podman
+
+Now, run the container with your config and keystore mounted inside:
+
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  tomcat:8.0.53
+
+
+
+## 🧩 Step 5️⃣ — Test HTTPS access
+Once it’s running:
+podman ps
+
+
+Then open your browser:
+https://localhost:8443
+https://10.10.200.35:8443/
+
+
+You’ll likely get a **browser SSL warning** (self-signed cert), but it’s working 🎉
+
+
+

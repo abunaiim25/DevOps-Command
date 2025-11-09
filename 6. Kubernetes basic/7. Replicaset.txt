@@ -1,0 +1,67 @@
+vi rcpod2.yaml 
+
+apiVersion: apps/v1                    # ReplicaSet uses apps/v1 API
+kind: ReplicaSet                       # Modern replacement for ReplicationController
+metadata:
+  name: myreplicaset                   # Name of the ReplicaSet
+
+spec:
+  replicas: 2                          # Number of Pod replicas to run
+  selector:
+    matchLabels:
+      myname: my_naiim                 # Selector must match template labels exactly
+  
+  template:                            # Pod template used for creating replicas
+    metadata:
+      name: testpod0
+      labels:
+        myname: my_naiim               # Labels applied to each Pod
+      annotations:
+        description: I am abu Naiim    # Optional annotation
+    
+    spec:
+      containers:
+        - name: ubuntu-container
+          image: ubuntu
+          command: ["/bin/bash", "-c", "while true; do echo Hello-Naiim; sleep 5; done"]
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"
+          ports:
+            - containerPort: 8080
+
+        - name: httpd-container
+          image: httpd
+          command: ["/bin/bash", "-c", "while true; do echo Apache httpd; sleep 5; done"]
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"
+          ports:
+            - containerPort: 80
+
+      restartPolicy: Always              # Always restart containers if they exit
+      nodeSelector:                      # Schedule Pods only on nodes with this label
+        hardware: t2-medium
+
+
+
+Apply and verify:
+kubectl apply -f rcpod2.yaml 
+kubectl get rs
+kubectl describe rs myreplicaset 
+
+Scaling:
+kubectl get pods --show-labels 
+kubectl scale --replicas=8 rs/myreplicaset      # Scale up 
+kubectl scale --replicas=2 rs/myreplicaset      # Scale down 
+Check:
+kubectl get rs
+kubectl get pods
+
+Delete to check:
+kubectl get pods
+kubectl delete pod myreplicaset-h5cnk
+
+Delete:
+kubectl delete -f rcpod.yaml
+kubectl get pods 

@@ -1,0 +1,37 @@
+* * * * *
+│ │ │ │ │
+│ │ │ │ └─ Day of week (0 - 6) [Sunday = 0]
+│ │ │ └─── Month (1 - 12)
+│ │ └───── Day of month (1 - 31)
+│ └─────── Hour (0 - 23)
+└───────── Minute (0 - 59)
+
+========================CronJob============================
+vi cronjob.yaml
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: bhupi
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: naiim
+              image: ubuntu
+              command:
+                - /bin/bash
+                - -c
+                - echo "Technical-Naiim"; sleep 5
+          restartPolicy: Never
+
+
+Commands:
+kubectl apply -f cronjob.yaml
+kubectl get cronjob
+kubectl get jobs
+kubectl get pods
+kubectl delete -f cronjob.yaml

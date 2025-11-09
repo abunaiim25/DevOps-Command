@@ -1,0 +1,112 @@
+ঠিক আছে ভাই 😎 — চল একদম **প্রপার ও ক্লিন ভার্সন** বানাই, যাতে **Tomcat container** এর সব error `stderr.log` এ সুন্দরভাবে যায়, আর normal output `stdout.log` এ।
+
+---
+
+## 🧩 Final & Clean Tomcat Logging Setup (Podman Container)
+
+### 🔹 Step 1: Host side এ log ফোল্ডার বানাও
+
+```bash
+mkdir -p /root/logs
+```
+
+---
+
+### 🔹 Step 2: Tomcat Container Run Command (Fixed Version ✅)
+
+```bash
+podman run -d --name tomcat-https-2 \
+  -p 8440:8440 \
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep "SEVERE" > /opt/tomcat/logs/stderr.log'
+
+---
+
+### 🧠 ব্যাখ্যা
+
+* `>` → শুধু normal output (`stdout`)
+* `2>` → শুধু error output (`stderr`)
+* `exec` → নিশ্চিত করে যে `/bin/sh` নিজেই Tomcat process এর PID 1 নেয় (না হলে signal/stop ঠিকমতো কাজ করবে না)
+
+---
+
+### 🔹 Step 3: Container এর ভেতরে লগ চেক করো
+
+```bash
+podman exec -it tomcat-https-2 sh
+cd /opt/tomcat/logs/
+ls
+```
+
+তুমি দেখতে পাবে:
+
+```
+stdout.log
+stderr.log
+catalina.out
+localhost_access_log.*
+```
+
+তারপর real-time লগ দেখো:
+
+```bash
+tail -f stdout.log
+```
+
+বা error গুলো দেখতে:
+
+```bash
+tail -f stderr.log
+```
+
+---
+
+### 🔹 Step 4: systemd সার্ভিস (যদি container টা সার্ভিস হিসেবে চালাতে চাও)
+
+```bash
+sudo vi /etc/systemd/system/tomcat.service
+```
+
+ভেতরে লিখো:
+
+```ini
+[Unit]
+Description=Tomcat Podman Container
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a tomcat-https
+ExecStop=/usr/bin/podman stop -t 10 tomcat-https
+
+[Install]
+WantedBy=multi-user.target
+```
+
+তারপর রিলোড করো:
+
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable --now tomcat
+```
+
+---
+
+### ✅ Final Result
+
+এখন তোমার লগগুলো আলাদা হয়ে যাবে:
+
+| লগ টাইপ           | লোকেশন                        |
+| ----------------- | ----------------------------- |
+| Normal Output     | `/opt/tomcat/logs/stdout.log` |
+| Error / Exception | `/opt/tomcat/logs/stderr.log` |
+| Host Mirror       | `/root/logs/`                 |
+
+---
+
+চাও চাইলে আমি একটা **compose-style YAML** ভার্সনও বানিয়ে দিতে পারি — future automation এর জন্য 😉
+দরকার?

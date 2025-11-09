@@ -1,0 +1,93 @@
+###--- Doman name
+test-vms.oss.net.bd
+
+###--- nginx Proxy configer
+upstrem server vms-demo
+
+###--- DNS add -- forward dr 
+
+###--- Database setup with keycloak on sqlyug
+###--- Tomcat Image creare by dockerfile to harbor
+
+###--- keycloak yaml files:
+keycloak-deploy.yaml
+keycloak-theam-pv.yaml
+keycloak-provider-pv.yaml
+ingress.yaml  === kong use
+
+###--- yaml for k0s 
+# yaml files:
+qpsdc-deploy(privet image)+service.yaml 
+qpsdc-ingress.yaml === kong use
+qpsdc-pv+pvc.yaml
+# war files setup:
+qpsdc.war
+
+# yaml files:
+qserver-deploy(privet image)+service.yaml 
+qserver-ingress.yaml === kong use
+qserver-pv+pvc.yaml 
+# war files setup:
+qserver7.war
+
+# yaml files:
+qpe-deploy( privet image)+service.yaml
+qpe-ingress.yaml === kong use
+qpe-pv+pvc.yaml
+# war files setup:
+qpe.war
+
+
+###--- Database setup for war with sqlyug
+###--- war configaration (Ip, port, .......)
+
+
+###--- Redis yaml files:
+redis-deploy.yaml
+redis-pv.yaml
+redis-ns.yaml
+redis-svc.yaml
+
+inside tomcat server
+apk radis
+redis cli install
+and Test
+
+
+###--- Minio yaml files:
+minio-deploy.yaml === ip used
+minio-pv.yaml
+minio-svc.yaml === nginx, nodePort
+
+--------------------------------------------------------------
+service name: data hub 
+branch vms
+application-vms.yaml
+
+push, builfdf
+docker run maven
+dockerfile 
+
+to harbor
+
+data-hub deployment
+ingress
+data-hub-pv
+
+another java 
+resource vmdemo......key pass setup
+
+
+vm wrapper service
+
+
+
+kioks.web
+dockerfile ==nginx, npm run dev
+build 
+push
+nginx
+
+yaml file:
+kioks-admin-deploy.yaml
+kioks-admin-ingress.yaml

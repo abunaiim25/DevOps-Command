@@ -1,0 +1,89 @@
+🔹 Node Command:
+kubectl get nodes                            # list all nodes in the cluster
+kubectl describe node nodename               # show details of a specific node
+
+
+🔹 Pod YAML File (pod1.yml):
+vi pod1.yaml                                  # open pod1.yml
+
+apiVersion: v1                  # Kubernetes API version
+kind: Pod                       # This resource is a Pod
+metadata:
+  name: testpod                 # Pod name
+  annotations:
+    description: I am abu Naiim  # Optional description
+  labels:
+    app: testpod                # Label to identify the app
+    owner: naiim                # Label to identify owner
+    myenv: dev                  # Label to identify environment
+
+spec:
+  containers:
+    - name: ubuntu-container     # First container name
+      image: ubuntu              # Image to use for the container
+      command: ["/bin/bash", "-c", "while true; do echo Hello-Naiim; sleep 5; done"]  # Command to run continuously
+      env:
+        - name: MY_NAME
+          value: "Abu Naiim"    # Environment variable inside container
+      ports:
+        - containerPort: 8080   # Port exposed by this container
+
+    - name: httpd-container      # Second container name
+      image: httpd               # Apache HTTPD image
+      command: ["/bin/bash", "-c", "while true; do echo Apache httpd; sleep 5; done"]  # Keep container running
+      env:
+        - name: MY_NAME
+          value: "Abu Naiim"    # Environment variable inside container
+      ports:
+        - containerPort: 80     # Port exposed by HTTPD container
+
+  restartPolicy: Never           # Pod will not restart if container exits
+
+
+
+🔹 Pod Run / Check:
+kubectl apply -f pod1.yaml                   # create pod
+kubectl get pods                             # check pod status
+kubectl get pods -o wide                     # check which node pod is running on
+
+
+🔹 Pod Management:
+kubectl get pods -o wide                     # list all pods with node info
+kubectl describe pod testpod                 # show pod details
+kubectl describe pod/testpod                 # alternative way
+
+kubectl logs -f testpod                      # follow logs of a pod
+kubectl logs -f testpod -c httpd-container   # follow logs of a pod with specific container
+kubectl logs testpod                         # view logs once
+
+kubectl delete pod testpod                   # delete a specific pod
+kubectl delete -f pod1.yml                   # delete pod from YAML file
+
+
+🔹 POD ip:
+kubectl exec testpod -c ubuntu-container -- hostname -i
+
+
+🔹 Port check (Port exposer or not):
+kubectl get pods -o wide                     # list all pods with node info
+curl 10.244.0.6:80
+
+
+🔹 Inside container:
+kubectl exec testpod -it -c ubuntu-container -- /bin/bash
+ps 
+ps -ef 
+exit
+
+Environment variable (Key:value):
+env
+echo $MY_NAME
+exit 
+
+HTTP server চালু করা:
+kubectl exec -it testpod -c httpd-container -- /bin/bash
+httpd -DFOREGROUND
+
+
+🔹 Labels commands:
+kubectl get pods --show-labels

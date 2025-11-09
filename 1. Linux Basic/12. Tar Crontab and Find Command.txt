@@ -1,0 +1,62 @@
+--------------- Tar Crontab and Find Command ---------------
+Tar === Compress file, like a zip file 
+./* = .=current dir, /=inside, *=all
+
+# man tar
+  ls -ld dirtest
+  touch testfile{1..3}
+  mkdir dirdata{1..3}
+  tar --help
+  
+Tar/Zip folder: [c → create, v → verbose, f → file, z → gzip compression]
+# tar -cvf data.tar /dirtest/* ===  (or) tar -czvf data1.zip /dirtest/*
+# ls -l data.tar
+# tar -tvf data.tar === show with details
+
+Extrect folder
+# mkdir archive
+# cd archive
+# tar -xvf /data.tar 
+# ll
+
+Search/filter:
+file = f
+directory = d
+# find / -type f -iname Passwd === file search
+# find / -type d -iname naiim === directory search
+# find / -iname naiim === show all
+
+-amin = files accessed before minutes
+-cmin = files created before minutes
+-mmin = files modified before minutes
+-atime = days
+-ctime = days
+-mtime = days
+# find / -mmin 5 === modify 5 min before
+# find / -cmin 5 === modify 5 min before
+
+
+crontab দিয়ে নির্দিষ্ট সময় অনুযায়ী automatically command বা script run করানো।
+# crontab -l === status
+# crontab -e === edit
+# man crontab
+
+Add crontab:
+# vi /etc/crontab
+# crontab -e === edit
+18  10  *  *  *  mkdir /server === (10.18 min, server will be create.)
+# crontab -l
+# ls === see derver was created
+
+Remove crontab:
+# crontab -r
+# crontab -l === cheack 
+
+For naiim user crontab: form root
+# crontab -u naiim -l
+# crontab -u naiim -e
+37    10    *    *    *    touch /home/naiim/test{10..13}
+# crontab -u naiim -l
+
+ 
+

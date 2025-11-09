@@ -1,0 +1,60 @@
+--------------- Firewalld - Firewall Deamon ---------------
+Firewall হলো তোমার কম্পিউটার/সার্ভারের জন্য security guard, এটা দেখে কে ঢুকতে পারবে, কে বের হতে পারবে — মানে কোন নেটওয়ার্ক ট্রাফিক Allow করবে আর কোনটা Block করবে।
+
+Firewall filter network traffic on the basis of rules.
+
+Two types of configarations:
+Runtime = This is temporary configuration. It removes when the firewall reloads or system restart.
+Permanent = This configuration is permanent. It does not remove when the firewall reloads or system restart.
+              
+1. Graphical
+# yum install firewall-config -y === firewall install for GUI
+  firewall-config === open firewall, service allowe 
+
+2. CLI
+# firewall-cmd                     # Basic firewall command
+# firewall-cmd --get-services      # Show all available services
+# firewall-cmd --list-services     # Show currently active services
+# firewall-cmd --list-ports        # Show currently open ports
+# firewall-cmd --get-zones         # Show all firewall zones
+# firewall-cmd --get-active-zones  # Show currently active zones
+# firewall-cmd --reload            # Reload firewall configuration
+
+
+  
+----- Runtime (Temporary) -----
+Zone change:
+  firewall-cmd --get-zones
+# firewall-cmd --set-default-zone=home === new zone home
+  firewall-cmd --get-active-zones
+  
+[ if not add zone, do not write --zone=home, because default zone will be work]
+Add Services:
+  firewall-cmd --list-services === current running services
+# firewall-cmd --add-service=http --zone=home === http service add 
+  firewall-cmd --list-services
+Add Ports: 
+# firewall-cmd --add-port=23/tcp --zone=home === port add
+  firewall-cmd --list-ports === port check
+Remove:
+# firewall-cmd --remove-service=https
+
+----- Permanent -----
+Zone change:
+  firewall-cmd --get-zones
+# firewall-cmd --permanent --set-default-zone=home === new zone home
+  firewall-cmd --get-active-zones
+  
+[ if not add zone, do not write --zone=home, because default zone will be work]
+Add Services:
+  firewall-cmd --list-services === current running services
+# firewall-cmd --permanent --add-service=https === http service add 
+  firewall-cmd --reload
+  firewall-cmd --list-services
+Add Ports: 
+# firewall-cmd --permanent --add-port=23/udp === port add
+  firewall-cmd --reload
+  firewall-cmd --list-ports === port check
+Remove:
+# firewall-cmd --permanent --remove-service=https
+  firewall-cmd --reload

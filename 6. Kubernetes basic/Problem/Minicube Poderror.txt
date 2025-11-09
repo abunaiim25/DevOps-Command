@@ -1,0 +1,18 @@
+1. Clean all Pods
+Kubectl get pods
+kubectl delete pod --all
+Kubectl get pods
+
+2. Minikube restart clean:
+minikube stop
+minikube delete
+minikube start --driver=docker
+
+3. Check nodes + label (optional)
+kubectl get nodes 
+kubectl label nodes minikube hardware=t2-medium
+
+4. Apply Deployment
+kubectl apply -f deploypod.yaml
+kubectl get pods -o wide
+

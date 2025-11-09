@@ -1,0 +1,190 @@
+ঠিক আছে, দেখছি তুমি পুরো process ঠিকভাবে set করতে চাচ্ছো। আমি step-by-step তোমার setup confirm করে দিচ্ছি যাতে **stdout / stderr** clean এবং আলাদা থাকে।
+
+---
+
+## ১️⃣ Volume এবং container run
+
+Host-এ logs folder:
+
+```bash
+mkdir -p /root/logs
+```
+
+Container run:
+
+```bash
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /opt/tomcat/bin/catalina.sh start
+```
+
+> Run-time redirect না দিলে catalina.sh modify করা লাগবে।
+
+---
+
+## ২️⃣ catalina.sh modify (optional but permanent fix)
+
+Container ভেতরে ঢুকে:
+
+```bash
+podman exec -it tomcat-https sh
+vi /opt/tomcat/bin/catalina.sh
+```
+
+`$CATALINA_OUT 2>&1 &` লাইনের জায়গায় replace করো:
+
+```bash
+exec "$_RUNJAVA" $JAVA_OPTS \
+  -classpath "$CLASSPATH" \
+  org.apache.catalina.startup.Bootstrap start \
+  >> "$CATALINA_BASE/logs/stdout.log" \
+  2>> "$CATALINA_BASE/logs/stderr.log"
+```
+
+* এটা নিশ্চিত করবে যে stdout আর stderr আলাদা ফাইলে যাবে।
+
+---
+
+## ৩️⃣ logging.properties adjust
+
+```bash
+vi /opt/tomcat/conf/logging.properties
+```
+
+ConsoleHandler এর level পরিবর্তন:
+
+```properties
+# আগেরটা:
+java.util.logging.ConsoleHandler.level = FINE
+
+# পরিবর্তন করো:
+java.util.logging.ConsoleHandler.level = SEVERE
+```
+
+* শুধুমাত্র SEVERE / ERROR messages stderr-এ যাবে।
+* INFO/WARN/FINE সব normal logs AsyncFileHandler দিয়ে stdout.log-এ যাবে।
+
+---
+
+## ৪️⃣ Restart Container
+
+```bash
+podman restart tomcat-https
+```
+
+---
+
+## ৫️⃣ Verify
+
+Container ভেতরে:
+
+```bash
+cd /opt/tomcat/logs
+ls
+tail -f stdout.log
+tail -f stderr.log
+```
+
+* `stdout.log` → সব normal log (INFO, WARN)
+* `stderr.log` → শুধু ERROR / SEVERE
+
+---
+
+✅ এই setup clean এবং host-এও `/root/logs` এ mirror হবে কারণ volume mount করা আছে।
+
+---
+
+
+
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/usr/local/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/usr/local/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/usr/local/tomcat/logs:Z \
+  tomcat:8.0.53
+
+
+Another:
+# 1. Detached container
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /opt/tomcat/bin/catalina.sh run
+
+# 2. Log capture + filter
+podman logs -f tomcat-https 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log
+
+
+
+
+
+
+# 1️⃣ Detached container run
+podman run -d --name tomcat \
+  -p 8444:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /opt/tomcat/bin/catalina.sh run
+
+# 2️⃣ Log capture later
+podman logs tomcat-https 2>&1 > /opt/tomcat/logs/stdout.log
+
+# 3️⃣ Filter errors
+grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" /opt/tomcat/logs/stdout.log > /opt/tomcat/logs/stderr.log
+
+podman run -d --name tomcat-https -p 8443:8443 -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z -v /root/logs:/opt/tomcat/logs:Z tomcat:8.0.53 /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /opt/tomcat/bin/catalina.sh run
+
+
+
+
+podman run -d --name tomcat \
+  -p 8444:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh start && tail -f /opt/tomcat/logs/catalina.out'
+
+
+
+
+
+
+podman run -d --name tomcat \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh start && tail -f /opt/tomcat/logs/catalina.out'
+
+or
+
+
+podman run -d --name tomcat-https \
+  -p 8444:8443 \
+  --network mynet \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep "SEVERE" > /opt/tomcat/logs/stderr.log'
+
+OR

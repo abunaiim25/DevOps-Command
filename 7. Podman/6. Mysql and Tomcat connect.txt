@@ -1,0 +1,42 @@
+
+
+### 🧩 Option 1: একই নেটওয়ার্কে যুক্ত করা 
+podman network create mynet
+```
+
+#### 🪄 Step 2: দুইটা container সেই network-এ attach করো
+podman network connect mynet mysql
+podman network connect mynet tomcat
+
+
+
+### 🧠 Step 3: Tomcat থেকে MySQL-এ connect করা
+তোমার `context.xml` বা `server.xml`-এ connection string এইভাবে দাও 👇
+
+<Resource name="jdbc/mydb" auth="Container"
+          type="javax.sql.DataSource"
+          username="root"
+          password="root"
+          driverClassName="com.mysql.jdbc.Driver"
+          url="jdbc:mysql://mysql:3306/ckd_19_10_2025"
+          maxActive="20" maxIdle="10" maxWait="-1"/>
+
+
+
+### 🔍 Quick check
+Tomcat container থেকে MySQL ping করে দেখতে পারো:
+podman exec -it tomcat ping mysql
+podman exec -it mysql ping tomcat
+
+
+অথবা সরাসরি mysql client ইনস্টল করে টেস্ট করো:
+podman exec -it tomcat bash
+apt-get update && apt-get install -y mysql-client
+mysql -h mysql -u root -p
+
+
+
+
+podman network disconnect podman mysql
+podman network ls
+podman inspect mysql

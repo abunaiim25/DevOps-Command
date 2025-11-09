@@ -1,0 +1,28 @@
+# Base image
+FROM openjdk:8-jdk
+
+# Maintainer
+LABEL maintainer="naiim@example.com"
+
+# Environment variables
+ENV TOMCAT_VERSION=8.0.53
+ENV TOMCAT_USER=admin
+ENV TOMCAT_PASSWORD=12345
+ENV CATALINA_HOME=/opt/tomcat
+
+# Download and extract full Tomcat
+RUN mkdir -p $CATALINA_HOME && \
+    curl -SL https://archive.apache.org/dist/tomcat/tomcat-8/v$TOMCAT_VERSION/bin/apache-tomcat-$TOMCAT_VERSION.tar.gz \
+    | tar -xzC $CATALINA_HOME --strip-components=1
+
+# Add manager/admin user
+RUN sed -i '/<\/tomcat-users>/i \
+<role rolename="manager-gui"/>\
+<role rolename="admin-gui"/>\
+<user username="'$TOMCAT_USER'" password="'$TOMCAT_PASSWORD'" roles="manager-gui,admin-gui"/>' $CATALINA_HOME/conf/tomcat-users.xml
+
+# Expose Tomcat port
+EXPOSE 8080
+
+# Start Tomcat
+CMD ["sh", "-c", "$CATALINA_HOME/bin/catalina.sh run"]

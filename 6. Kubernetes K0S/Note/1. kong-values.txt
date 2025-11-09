@@ -1,0 +1,242 @@
+gateway:
+  env:
+    nginx_proxy_proxy_buffer_size: 256k          # Nginx proxy buffer size
+    nginx_proxy_proxy_buffers: 16 256k           # Number and size of Nginx proxy buffers
+    nginx_proxy_proxy_busy_buffers_size: 512k    # Buffer size for busy Nginx connections
+
+    untrusted_lua_sandbox_requires: resty.template, kong.tools.utils, resty.http, cjson, resty.openidc  # Lua modules allowed in plugins
+
+    admin_listen: 0.0.0.0:8001, 0.0.0.0:8444 http2 ssl   # Admin API listening ports (HTTP & HTTPS) 
+    proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 http2 ssl   # Proxy listening ports (HTTP & HTTPS)
+    status_listen: 0.0.0.0:8100                          # Status endpoint port 
+
+  proxy:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8000"   # HTTP proxy listen address
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8443 http2"  # HTTPS proxy listen address with HTTP/2
+      nodePort: 32222            # NodePort for external access
+
+  admin:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8001"   # HTTP admin API listen address
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8444"   # HTTPS admin API listen address
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "nginx"                    # Use Nginx ingress controller
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"  # Allowed IP range
+      # Optional TLS secret (create beforehand)
+      # tls:
+      #   - hosts:
+      #       - admin.example.com
+      #     secretName: kong-admin-tls
+
+  status:
+    enabled: true
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8100"   # Status endpoint HTTP listen address
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring   # Namespace for Prometheus ServiceMonitor
+    prometheus:
+      enabled: true
+    port: 8100               # Metrics endpoint port
+
+  resources:
+    requests:
+      cpu: 200m               # Requested CPU for pod
+      memory: 256Mi           # Requested memory for pod
+    limits:
+      cpu: 500m               # Maximum CPU allowed
+      memory: 512Mi           # Maximum memory allowed
+
+  hpa:
+    enabled: true
+    minReplicas: 2             # Minimum number of replicas
+    maxReplicas: 5             # Maximum number of replicas
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60  # Scale up if CPU > 60%
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 70  # Scale up if Memory > 70%
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - kong
+          topologyKey: "kubernetes.io/hostname"   # Avoid placing multiple Kong pods on the same node
+
+  livenessProbe:
+    httpGet:
+      path: /status
+      port: 8100
+    initialDelaySeconds: 10    # Wait 10s before first check
+    periodSeconds: 10          # Check every 10s
+
+  readinessProbe:
+    httpGet:
+      path: /status
+      port: 8100
+    initialDelaySeconds: 5     # Wait 5s before first readiness check
+    periodSeconds: 10          # Check every 10s
+
+
+
+
+
+1. gateway:
+এটি পুরো কনফিগারেশনের রুট। এর ভেতরে সব কিছু Kong gateway এর সেটআপ সংক্রান্ত।
+
+2. env:
+এখানে পরিবেশ ভেরিয়েবল/সেটিংস আছে।
+
+nginx_proxy_proxy_buffer_size: 256k
+Nginx proxy এর জন্য একটিবারে যে পরিমাণ ডাটা বাফার করা যায়।
+অর্থাৎ, একটি রিকোয়েস্ট বা রেসপন্সের জন্য 256 KB পর্যন্ত বাফার।
+
+nginx_proxy_proxy_buffers: 16 256k
+মোট 16টি বাফার থাকবে, প্রতিটিতে 256 KB।
+অর্থাৎ, Nginx 16×256 KB = 4 MB পর্যন্ত একই সময়ে হ্যান্ডেল করতে পারবে।
+
+nginx_proxy_proxy_busy_buffers_size: 512k
+ব্যস্ত কানেকশনের জন্য অতিরিক্ত বাফার।
+বড় বা ব্যস্ত রিকোয়েস্ট/রেসপন্সের জন্য 512 KB।
+
+untrusted_lua_sandbox_requires: resty.template, kong.tools.utils, resty.http, cjson, resty.openidc
+Lua plugins এ কোন মডিউলগুলো ব্যবহার করা যাবে।
+সিকিউরিটি কারণে সব মডিউল খোলা থাকে না, শুধু অনুমোদিতগুলো।
+
+admin_listen: 0.0.0.0:8001, 0.0.0.0:8444 http2 ssl   # Admin API listening ports (HTTP & HTTPS) //কনফিগারেশন, রাউট, সার্ভিস, প্লাগইন ইত্যাদি ম্যানেজ করার জন্য।
+proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 http2 ssl   # Proxy listening ports (HTTP & HTTPS) //প্রক্সি/API traffic, অর্থাৎ ইউজারের রিকোয়েস্ট হ্যান্ডল করার জন্য।
+status_listen: 0.0.0.0:8100                          # Status endpoint port //Kong pod এর health/status চেক করার জন্য।
+
+admin_listen: 0.0.0.0:8001, 0.0.0.0:8444 http2 ssl
+Admin API (Kong এর কনফিগারেশন/ম্যানেজমেন্ট) কোন IP/Port এ শোনা হবে।
+HTTP: 8001, HTTPS: 8444, HTTP/2 সমর্থিত।
+
+proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 http2 ssl
+User traffic (API traffic) কোন IP/Port এ আসবে।
+HTTP: 8000, HTTPS: 8443, HTTP/2 সমর্থিত।
+
+status_listen: 0.0.0.0:8100
+Status endpoint (সেল্ফ হেলথ চেক) কোন পোর্টে শোনা হবে।
+
+3. proxy:
+প্রক্সি সার্ভার কনফিগারেশন।
+
+http:
+enabled: true → HTTP সক্রিয়।
+listen: ["0.0.0.0:8000"] → সব ইন্টারফেসে 8000 পোর্টে শুনবে।
+tls:
+enabled: true → HTTPS সক্রিয়।
+listen: ["0.0.0.0:8443 http2"] → HTTPS এবং HTTP/2 সক্রিয়।
+nodePort: 32222 → Kubernetes NodePort দিয়ে এক্সটারনাল অ্যাক্সেস।
+
+4. admin:
+Admin API কনফিগারেশন।
+http:
+enabled: true → HTTP সক্রিয়।
+listen: ["0.0.0.0:8001"] → Admin API HTTP পোর্ট।
+tls:
+enabled: true → HTTPS সক্রিয়।
+listen: ["0.0.0.0:8444"] → Admin API HTTPS পোর্ট।
+ingress:
+enabled: true → Admin API কে Kubernetes Ingress এর মাধ্যমে এক্সপোজ করা।
+annotations:
+kubernetes.io/ingress.class: "nginx" → Nginx Ingress Controller ব্যবহার।
+nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8" → শুধুমাত্র এই IP রেঞ্জের জন্য Admin API অ্যাক্সেস।
+
+5. status:
+enabled: true → Status endpoint সক্রিয়।
+http:
+enabled: true → HTTP সক্রিয়।
+listen: ["0.0.0.0:8100"] → 8100 পোর্টে স্ট্যাটাস।
+
+6. metrics:
+Metrics / Prometheus integration।
+enabled: true → Metrics সক্রিয়।
+serviceMonitor: → Prometheus ServiceMonitor সক্রিয়।
+namespace: monitoring → ServiceMonitor কোন namespace এ থাকবে।
+prometheus:
+enabled: true → Prometheus metrics সক্রিয়।
+port: 8100 → Metrics endpoint পোর্ট।
+
+7. resources:
+Kubernetes pod এর resource limit & request।
+requests:
+cpu: 200m → কমপক্ষে 0.2 CPU।
+memory: 256Mi → কমপক্ষে 256 MB।
+limits:
+cpu: 500m → সর্বাধিক 0.5 CPU।
+memory: 512Mi → সর্বাধিক 512 MB।
+
+8. hpa:
+Horizontal Pod Autoscaler।
+enabled: true → HPA সক্রিয়।
+minReplicas: 2, maxReplicas: 5 → 2–5 পড।
+metrics: → CPU > 60%, Memory > 70% হলে scale-up।
+
+9. affinity:
+Pod scheduling নিয়ন্ত্রণ।
+podAntiAffinity: → একই node-এ একাধিক Kong pod রাখবে না।
+topologyKey: "kubernetes.io/hostname" → node ধরে anti-affinity।
+
+10. livenessProbe:
+Pod alive কি না চেক করার জন্য।
+httpGet: → HTTP GET /status
+port: 8100
+initialDelaySeconds: 10 → 10 সেকেন্ড পরে প্রথম চেক।
+periodSeconds: 10 → প্রতি 10 সেকেন্ডে চেক।
+
+11. readinessProbe:
+Pod ready কি না চেক করার জন্য।
+httpGet: → HTTP GET /status
+port: 8100
+initialDelaySeconds: 5 → 5 সেকেন্ড পরে প্রথম চেক।
+periodSeconds: 10 → প্রতি 10 সেকেন্ডে চেক।
+
+
+1️⃣ Metrics কি?
+Metrics হলো সংখ্যাগত ডাটা যা তোমার সার্ভিসের পারফরম্যান্স বা অবস্থা দেখায়।
+উদাহরণ:
+কত API request এসেছে প্রতি সেকেন্ডে
+CPU বা memory ব্যবহার কত
+কতটা traffic failed হয়েছে
+
+2️⃣ Prometheus কি?
+Prometheus হলো open-source monitoring system।
+এটা Metrics collect, store, এবং visualize করে।
+Kubernetes/Cloud environment এ খুব বেশি ব্যবহৃত।
+
+3️⃣ Metrics / Prometheus integration কেন দরকার?
+তুমি Kong gateway এর performance monitor করতে পারো।
+উদাহরণ: যদি CPU usage 70% অতিক্রম করে → alert বা scaling trigger করা যায়।
+এক কথায়: service health & performance track করা।

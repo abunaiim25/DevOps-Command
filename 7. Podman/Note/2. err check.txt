@@ -1,0 +1,43 @@
+ঠিক আছে ভাই, আমি দেখি তুমি যা পোস্ট করেছো সেটা **stdout** এর লগের মতোই লাগছে। 😎
+
+তোমার লগগুলোতে সবই `INFO` level এর messages — যেমন:
+
+```
+Deployment of web application directory /opt/tomcat/webapps/ROOT has finished
+Starting ProtocolHandler ["http-nio-8080"]
+Server startup in 754 ms
+```
+
+এগুলো **normal output**, তাই এগুলো সব **`stdout.log`** এ যাবে।
+
+💡 **এখানে কোন error বা exception নেই**, তাই **`stderr.log`** এ কিছুই দেখা যাবে না।
+
+---
+
+যদি তুমি **stderr** চেক করতে চাও, তাহলে অবশ্যই কিছু **ত্রুটি বা exception** trigger করতে হবে। যেমন:
+
+1. **Non-existing file access:**
+
+```bash
+podman exec -it tomcat-https sh
+cat /nonexistent/file.txt
+```
+
+2. **Broken webapp deploy:**
+
+```bash
+echo "not a war" > /opt/tomcat/webapps/bad.war
+podman restart tomcat-https
+```
+
+তারপর:
+
+```bash
+tail -f logs/stderr.log
+```
+
+এতে দেখবে **error messages**।
+
+---
+
+চাও আমি একটা **small JSP file বানাই** যা খুললেই `stderr.log` এ error দিবে, direct testing এর জন্য?

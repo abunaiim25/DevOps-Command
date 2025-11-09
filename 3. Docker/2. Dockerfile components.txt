@@ -1,0 +1,57 @@
+------------------Image Create & Image to container------------------
+
+# docker run -it --name amirayhan ubuntu /bin/bash
+  docker ps
+  
+# docker attach amirayhan
+  ls
+  cd tmp
+  touch myfile
+  ls
+  echo "Inside ami" > myfile
+  cat myfile
+  exit
+  
+# docker diff amirayhan/35a118334730 === Difference between the base image & change on it then
+
+Container to Image create:
+# docker commit amirayhan/35a118334730 updateimage
+  docker images
+
+Image to container create:
+# docker run -it --name mycontainer updateimage
+  ls
+  cd tmp/
+  cat myfile
+  
+------------------------------Dockerfile---------------------------------
+# vi Dockerfile
+  FROM ubuntu
+  RUN echo "It's me rayhan" > /tmp/testfile
+
+To create image out of dockerfile:
+# docker build -t myimg .
+  
+Now create container from the above image:
+# docker run -it --name mycontainer myimg /bin/bash 
+
+-----
+# vi Dockerfile  
+  FROM ubuntu
+  WORKDIR /tmp
+  RUN echo "It's me abu naiim" >> /tmp/testfile
+  ENV myname AbuNaiim
+  COPY amnifile /tmp
+  ADD test.tar.gz /tmp
+  
+# touch amnifile
+  echo "It's me abu naiim" > amnifile
+  
+# touch test
+  tar -cvf test.tar test
+  gzip test.tar
+  
+# root@247acf7cdd0c:/tmp# 
+  echo $myname === ENV 
+  
+

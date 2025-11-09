@@ -1,0 +1,78 @@
+vi deploypod.yaml
+
+
+apiVersion: apps/v1
+kind: Deployment                       # Deployment manages ReplicaSets automatically
+metadata:
+  name: mydeployment                   # Name of the Deployment
+  labels:
+    app: myapp
+
+spec:
+  replicas: 2                          # Desired number of Pods
+  selector:
+    matchLabels:
+      app: myapp                       # Must match labels in Pod template
+
+  template:                            # Pod template (like in ReplicaSet)
+    metadata:
+      labels:
+        app: myapp                     # Label used by Deployment selector
+      annotations:
+        description: I am abu Naiim    # Optional annotation
+
+    spec:
+      containers:
+        - name: ubuntu-container       # First container
+          image: ubuntu
+          command: ["/bin/bash", "-c", "while true; do echo Hello-Naiim; sleep 5; done"]
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"
+          ports:
+            - containerPort: 8080      # Expose port 8080 inside container
+
+        - name: httpd-container        # Second container
+          image: httpd
+          command: ["/bin/bash", "-c", "while true; do echo Apache httpd; sleep 5; done"]
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"
+          ports:
+            - containerPort: 80        # Expose port 80 inside container
+
+      restartPolicy: Always            # Restart containers automatically if they fail
+      nodeSelector:                    # Schedule Pods only on nodes with this label
+        hardware: t2-medium
+
+
+
+# Apply and verify: v1
+kubectl apply -f deploypod.yaml 
+kubectl get pods
+kubectl get deploy 
+kubectl describe deploy mydeployment
+kubectl get rs
+kubectl delete pod mydeployment-6cf897f69f-8wfsp
+kubectl scale --replicas=1 deploy -l mydeployment
+kubectl logs  -f mydeployment-6cf897f69f-hnxzr
+
+# After modify: v2
+vi deploypod.yaml
+kubectl apply -f deploypod.yaml 
+kubectl get deploy 
+kubectl get rs
+kubectl exec mydeployment-5fc8c96df7-8pthz -- cat /etc/os-release 
+
+# Just version/Pod update apply
+kubectl rollout status deployment mydeployment === updated version 
+kubectl rollout history deployment mydeployment
+kubectl rollout undo deploy/mydeployment === current to previous version 
+kubectl get deploy 
+
+test:
+kubectl get pods
+kubectl logs -f mydeployment-746b5fd4bb-bsjlc 
+
+# Just back to previous version
+kubectl 

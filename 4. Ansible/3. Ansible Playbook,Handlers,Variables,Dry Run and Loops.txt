@@ -1,0 +1,113 @@
+----- playbook:1 -----
+inside ansible
+# vi target.yml
+--- # My First Testing YAML Playbook
+- hosts: demo
+  user: ansible
+  connection: ssh
+  gather_facts: yes
+  
+Execute this playbook:
+# ansible-playbook target.yml 
+
+
+----- playbook:2 (tasks)-----
+inside ansible
+# vi task.yml
+--- # Target and task playbook
+- hosts: demo
+  remote_user: ansible
+  become: yes
+  connection: ssh
+  gather_facts: yes
+
+  tasks:
+    - name: Install httpd on Linux
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+ 
+Execute this playbook:
+# ansible-playbook task.yml 
+
+
+----- playbook:3 (Variables, tasks)-----
+inside ansible
+# vi varstest.yml  
+--- # My Variable playbook
+- hosts: demo
+  remote_user: ansible
+  become: yes
+  gather_facts: yes
+
+  vars:
+    pkgname: httpd
+
+  tasks:
+    - name: Ensure "{{ pkgname }}" is installed
+      ansible.builtin.dnf:
+        name: "{{ pkgname }}"
+        state: present
+      register: install_result
+
+# ansible-playbook varstest.yml
+  
+  
+----- playbook:4 (tasks, handlers)-----
+inside ansible
+# vi handlers.yml  
+--- # My playbook for handlers
+- hosts: demo
+  remote_user: ansible
+  become: yes
+  connection: ssh
+
+  tasks:
+    - name: Install httpd server on centos
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+      notify: restart httpd   # Handler trigger
+
+  handlers:
+    - name: restart httpd
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+
+DRYRUN: check before execute
+# ansible-playbook handlers.yml --check
+
+For execute:
+# ansible-playbook handlers.yml
+
+Check Node1 & Node2:
+# which httpd
+# systemctl status httpd
+
+
+----- playbook:4 (tasks, loops)-----
+inside ansible
+# vi loops.yml  
+--- # My playbook for loops
+- hosts: demo
+  remote_user: ansible
+  become: yes
+  connection: ssh
+  
+  tasks:
+    - name: Add list of users in my nodes
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - abu
+        - rayhan
+        - siddique
+        - rakib
+
+For execute:
+# ansible-playbook loops.yml
+
+To verify, go inside Node1 & Node2:
+# cat /etc/passwd

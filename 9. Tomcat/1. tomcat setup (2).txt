@@ -1,0 +1,364 @@
+
+# *Apache Tomcat & JDK on Ubuntu*
+
+# 🚀 *Setup Guide: JDK 8u221 + Apache Tomcat 8.0.53 on Ubuntu*
+
+---
+
+## 🧩 *Step 1: Update the System*
+
+Update all existing Ubuntu packages:
+
+bash
+sudo apt update && sudo apt upgrade -y
+
+
+---
+
+## ☕ *Step 2: Install and Set Up Java JDK 8 (v8u221)*
+
+### 🔹 2.1 Create a directory for Java
+
+bash
+sudo mkdir -p /usr/java
+
+
+### 🔹 2.2 Copy the JDK tarball to /usr/java/
+
+bash
+cp jdk-8u221-linux-x64.tar.gz /usr/java/
+
+
+### 🔹 2.3 Extract the JDK
+
+bash
+cd /usr/java
+tar -zxvf jdk-8u221-linux-x64.tar.gz
+
+
+### 🔹 2.4 Set permissions (optional)
+
+bash
+chmod -R 777 jdk1.8.0_221/
+
+
+---
+
+## ⚙ *Step 3: Set Java Environment Variables*
+
+### 🧭 Option A: Temporary (current session only)
+
+bash
+JAVA_HOME=/usr/java/jdk1.8.0_221
+export JAVA_HOME
+PATH=$JAVA_HOME/bin:$PATH
+export PATH
+
+
+Verify Java installation:
+
+bash
+java -version
+
+
+---
+
+### 🔒 Option B: Permanent (for all future sessions)
+
+
+echo 'JAVA_HOME=/usr/java/jdk1.8.0_221' >>~/.bash_profile
+echo 'export JAVA_HOME' >>~/.bash_profile
+echo 'PATH=$JAVA_HOME/bin:$PATH' >>~/.bash_profile
+echo 'export PATH' >>~/.bash_profile
+
+
+Apply the changes:
+
+bash
+source ~/.bash_profile
+
+
+Check Java version:
+
+bash
+java -version
+
+
+---
+
+## 🐱‍💻 *Step 4: Install and Set Up Apache Tomcat 8.0.53*
+
+### 🔹 4.1 Copy Tomcat tarball to /opt
+
+bash
+cp apache-tomcat-8.0.53.tar.gz /opt
+
+
+### 🔹 4.2 Extract Tomcat
+
+bash
+cd /opt
+tar -zxvf apache-tomcat-8.0.53.tar.gz
+
+
+### 🔹 4.3 Rename folder for simplicity
+
+bash
+mv apache-tomcat-8.0.53 tomcat
+
+
+### 🔹 4.4 Set permissions
+
+bash
+chmod -R 777 /opt/tomcat/
+
+
+---
+
+## ▶ *Step 5: Start and Stop Tomcat*
+
+Navigate to Tomcat bin directory:
+
+bash
+cd /opt/tomcat/bin
+
+
+### 🟢 Start Tomcat:
+
+bash
+sh startup.sh
+
+
+### 🔴 Stop Tomcat:
+
+bash
+sh shutdown.sh
+
+
+---
+
+## 🔍 *Step 6: Verify Tomcat is Running(Optional Step- for Checking)*
+
+Check if Tomcat is listening on port 8080:
+
+bash
+sudo ss -tulnp | grep java
+
+
+You should see *port 8080* (or your configured port).
+
+Check running process:
+
+bash
+ps -ef | grep tomcat
+
+
+View live Tomcat logs:
+
+bash
+tail -f /opt/tomcat/logs/catalina.out
+
+
+---
+
+## 🔐 *Step 7: Configure Tomcat Manager App*
+
+Open the Tomcat users file:
+
+bash
+sudo vim /opt/tomcat/conf/tomcat-users.xml
+
+
+Add a manager/admin user inside <tomcat-users>:
+
+xml
+<user name="admin" password="admin" roles="admin-gui,manager-gui" />
+
+
+Save and exit, then restart Tomcat:
+
+bash
+cd /opt/tomcat/bin
+sh shutdown.sh
+sh startup.sh
+
+
+---
+
+## 🌐 *Step 8: Access in Browser*
+
+Open in your browser:
+
+
+http://192.168.10.132:8080/manager/html
+
+
+- *Username:* admin
+- *Password:* admin
+
+✅ You should now see the *Apache Tomcat 8.0.53 Manager Dashboard!*
+
+---
+
+# *Deploying qpe.war on Apache Tomcat 8.0.53*
+
+## 🧩 *Step 1: Confirm Tomcat is Running*
+
+Check if Tomcat is already running:
+
+bash
+ps -ef | grep tomcat
+
+
+Or open in your browser:
+
+
+http://<your-server-ip>:8080
+
+
+👉 If you see the *Tomcat homepage*, that means it’s running fine.
+
+If it’s not running, start it manually:
+
+bash
+cd /opt/tomcat/bin
+sh shutdown.sh
+sh startup.sh
+
+
+---
+
+## 📦 *Step 2: Copy the WAR File to Tomcat*
+
+You need to place your qpe.war file inside the *Tomcat webapps directory*.
+
+bash
+sudo cp /path/to/qpe.war /opt/tomcat/webapps/
+
+
+---
+
+## ⚙ *Step 3: Tomcat Automatically Deploys the WAR*
+
+Once qpe.war is copied to webapps/, Tomcat will *automatically extract and deploy it*.
+
+It will create a new folder like /opt/tomcat/webapps/qpe/.
+
+You can verify the deployment by checking the folder:
+
+bash
+ls /opt/tomcat/webapps/
+
+
+You should see:
+
+
+ROOT  docs  examples  host-manager  manager  qpe  qpe.war
+
+
+---
+
+## 🔍 *Step 4: Check Deployment Logs*
+
+To confirm if the deployment succeeded, check the Tomcat log:
+
+bash
+tail -f /opt/tomcat/logs/catalina.out
+
+
+If everything is fine, you’ll see something like:
+
+
+Deployment of web application archive /opt/tomcat/webapps/qpe.war has finished in X ms
+
+
+---
+
+## 🌐 *Step 5: Access the Application*
+
+Now open your browser and go to:
+
+
+http://192.168.10.132:8080/qpe
+
+
+🎉 You should now see your qpe application homepage.
+
+=================================================================
+
+# *🧩 Install and Configure MariaDB on Ubuntu*
+
+## ☕ *Step 1: Update System Packages*
+
+First, make sure your system is up to date.
+
+bash
+sudo apt update && sudo apt upgrade -y
+
+
+### 🧩 Step 2: Pull and Run MariaDB Container
+
+Run this command in your terminal:
+
+bash
+docker run -d \
+  --name mariadb-container \
+  -e MYSQL_ROOT_PASSWORD=root123 \
+  -e MYSQL_DATABASE=qpedb \
+  -e MYSQL_USER=qpeuser \
+  -e MYSQL_PASSWORD=qpepass \
+  -p 3306:3306 \
+  mariadb:latest
+
+
+*Explanation:*
+
+- -name mariadb-container → name of your container
+- MYSQL_ROOT_PASSWORD=root123 → root password
+- MYSQL_DATABASE=qpedb → database to auto-create
+- MYSQL_USER=qpeuser & MYSQL_PASSWORD=qpepass → new user with full access to that DB
+- p 3306:3306 → exposes MariaDB port to host machine
+- mariadb:latest → official MariaDB image
+
+---
+
+### 🧩 Step 3: Verify the Container Is Running
+
+bash
+docker ps
+
+
+### 🧩 Step 3: Connect Inside the Container
+
+**Use docker exec with mariadb client directly**
+
+bash
+docker exec -it mariadb-container mariadb -u root 
+
+
+Enter password → root123
+
+- Note the use of **mariadb** instead of mysql.
+- Enter your root password (root123) when prompted.
+- You will get the MariaDB CLI.
+
+
+
+
+
+8443 ssl:
+sudo /usr/java/jdk1.8.0_221/bin/keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 \
+  -keystore /opt/tomcat/ssl/keystore.p12 -storeType PKCS12 \
+  -validity 3650 -storepass changeit
+
+
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+           clientAuth="false" sslProtocol="TLS"
+           keystoreFile="/opt/tomcat/ssl/keystore.p12"
+           keystorePass="12345Q"
+           keystoreType="PKCS12" />
+
+
+
+

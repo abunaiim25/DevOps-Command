@@ -1,0 +1,27 @@
+Website: https://github.com/louislam/uptime-kuma?utm_source=chatgpt.com
+
+sudo apt update
+sudo apt install -y git curl build-essential
+sudo apt install npm
+
+node -v
+npm -v
+
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+
+
+###--- uptime:
+git clone https://github.com/louislam/uptime-kuma.git
+cd uptime-kuma
+npm run setup
+
+# Option 1. Try it
+node server/server.js
+
+# (Recommended) Option 2. Run in the background using PM2
+# Install PM2 if you don't have it:
+npm install pm2 -g && pm2 install pm2-logrotate
+
+# Start Server
+pm2 start server/server.js --name uptime-kuma

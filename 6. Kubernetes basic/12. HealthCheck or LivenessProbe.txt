@@ -1,0 +1,35 @@
+vi mylivenessprobe.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mylivenessprobe          # Pod name
+  labels:
+    test: liveness               # Label to identify Pod
+spec:
+  containers:
+    - name: liveness             # Container name
+      image: ubuntu              # Using ubuntu image
+      args:                      # Command passed to container
+        - /bin/sh                # Run shell
+        - -c                     # Execute inline command
+        - touch /tmp/healthy; sleep 1000   # Create a file then sleep (simulate long-running process)
+      
+      livenessProbe:             # Kubelet will check if container is "alive"
+        exec:                    # Use exec type probe
+          command:               # Command that must succeed for Pod to be healthy
+            - cat
+            - /tmp/healthy       # If this file exists, probe passes
+        initialDelaySeconds: 5   # Wait 5s after container starts before first probe
+        periodSeconds: 5         # Run probe every 5s
+        timeoutSeconds: 30       # Give 30s max for the probe to succeed
+
+
+
+kubectl apply -f mylivenessprobe.yaml
+kubectl get pods -A
+kubectl describe pod mylivenessprobe
+kubectl exec -it mylivenessprobe -- /bin/bash
+cat tmp/healthy
+echo $?
+o/t: 0 to healthy, if non zero to not healthy

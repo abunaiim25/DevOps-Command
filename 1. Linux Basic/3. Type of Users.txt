@@ -1,0 +1,46 @@
+--------------- User - User is one who uses the system resources ---------------
+
+Super User(id: 0) -> Created automatically during installation.
+System User(id: 1-999)
+Standard User or Normal User(id: 1000-60000) (naiim)
+ 
+Super User:
+# id root === Verify root user identity 
+
+System Users:
+# cat /etc/passwd === Users details  
+# grep 999 /etc/passwd === Search by grep for user details
+# sort /etc/passwd === Sorted wise id
+
+Standard User:
+# ls /home === Home Directory 
+# ls /var/spool/mail/ === Mailbox file
+# id naiim === uid=1000(naiim) gid=1000(naiim) groups=1000(naiim)
+# grep naiim /etc/passwd === Search by grep (User details)
+Output & Compare:
+username:password:userid:groupid:comment:home_directory:shell
+naiim:x:1000:1000:naiim:/home/naiim:/bin/bash
+
+Create/Add User from root:
+# useradd rayhan
+# usermod -p 12345 rayhan
+
+Secure information of user / User password info:
+# grep rayhan /etc/shadow === Password details
+Output & Compare:
+rayhan:12345:20323:0:99999:7:::
+username:password:last_password_change:minimum_password_change:maximum_password_age:warning_label:inactive_period:expire_date
+
+# chage -l rayhan === Last time password change
+# cat /etc/default/useradd === useradd defaults file 
+
+file1 and dir1 create on abu user:
+# ls -a /etc/skel/ (/etc/skel/ → Creates a new user and copies it to the home directory.)
+# grep rayhan /etc/passwd
+# touch /etc/skel/file1 
+# mkdir /etc/skel/dir1 
+# ls /etc/skel
+# useradd abu
+  ls /home/abu
+
+# grep -w user14 /etc/passwd === Search only user14 by -w

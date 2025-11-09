@@ -1,0 +1,91 @@
+---------- Using Volume mount ----------
+###---
+vi sample.conf
+
+this is my configuration file for any application
+
+Apply and check:
+kubectl create configmap mymap --from-file=sample.conf
+kubectl get configmap
+kubectl describe configmap mymap
+
+
+###--- Config map using volume
+vi deployconfigmap.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolconfig
+spec:
+  containers:
+    - name: c1
+      image: centos:7
+      command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+      volumeMounts:
+        - name: testconfigmap
+          mountPath: "/tmp/config"   # এখানে configMap ফাইলগুলো আসবে
+  volumes:
+    - name: testconfigmap
+      configMap:
+        name: mymap   # ConfigMap name (তুমি আগেই create করেছো)
+        items:
+          - key: sample.conf   # ✅ এখানে তোমার ConfigMap এর আসল key বসাতে হবে
+            path: sample.conf  # ✅ Pod এর ভিতরে ফাইলের নাম
+
+
+Apply and check:
+kubectl apply -f deployconfigmap.yml
+kubectl get pods 
+kubectl describe pod myvolconfig
+kubectl delete pod myvolconfig
+
+Inside container:
+kubectl exec -it myvolconfig -- /bin/bash
+cd /tmp/config
+ls -l
+cat sample.conf
+
+
+---------- Using Environment Variables ----------
+###---
+vi sample.conf
+
+this is my configuration file for any application
+
+Apply and check:
+kubectl create configmap mymap --from-file=sample.conf
+kubectl get configmap
+kubectl describe configmap mymap
+
+
+###--- Config map using environment
+vi deployconfigmap2.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myenvconfig
+spec:
+  containers:
+    - name: c1
+      image: centos:7
+      command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+      env:
+        - name: MYENV          # ENV variable এর নাম
+          valueFrom:
+            configMapKeyRef:
+              name: mymap       # ConfigMap name
+              key: sample.conf  # ConfigMap এর আসল key
+
+
+Apply and check:
+kubectl apply -f deployconfigmap2.yml
+kubectl get pods 
+kubectl describe pod myenvconfig2
+kubectl delete pod myenvconfig2
+
+Inside container:
+kubectl exec -it myenvconfig2 -- /bin/bash
+env
+echo $MYENV

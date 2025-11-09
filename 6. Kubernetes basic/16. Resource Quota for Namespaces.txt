@@ -1,0 +1,178 @@
+Inside namespace dev:
+
+###---
+vi podresources.yaml
+
+apiVersion: v1            
+kind: Pod                 
+metadata:
+  name: resources         # Pod name -> "resources"
+spec:                     
+  containers:             
+    - name: resource      # Container name -> "resource"
+      image: centos:7     
+      command:            
+        - "/bin/bash"
+        - "-c"
+        - "while true; do echo Technical-Guftgu; sleep 5 ; done"
+      resources:          # Resource configuration for the container
+        requests:         # Minimum guaranteed resources
+          memory: "64Mi"  # At least 64Mi memory will be reserved
+          cpu: "100m"     # At least 0.1 CPU core will be reserved
+        limits:           # Maximum resources the container can consume
+          memory: "128Mi" # Maximum memory usage -> 128Mi
+          cpu: "200m"     # Maximum CPU usage -> 0.2 CPU core
+
+
+Commands:
+kubectl apply -f podresources.yaml 
+kubectl get pods 
+kubectl describe pod resources
+kubectl delete -f podresources.yaml 
+
+
+==============================RESOURCE QUOTA===================================
+###--- Resource Quota
+vi resourcequota.yaml
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: myquota
+spec:
+  hard:
+    requests.cpu: "200m"    # Total CPU requested across namespace cannot exceed 200m
+    requests.memory: "200Mi" # Total memory requested cannot exceed 200Mi
+    limits.cpu: "400m"      # Total CPU limits across namespace cannot exceed 400m
+    limits.memory: "400Mi"  # Total memory limits cannot exceed 400Mi
+
+Commands:
+kubectl apply -f resourcequota.yaml 
+kubectl get pods 
+kubectl describe pod myquota
+kubectl delete -f myquota.yaml 
+
+###--- Deployment Pod create for Resource Quota
+vi deploymentspod.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deployments
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      objtype: deployment
+  template:
+    metadata:
+      labels:
+        objtype: deployment
+    spec:
+      containers:
+        - name: c00
+          image: ubuntu
+          command: ["/bin/bash", "-c", "while true; do echo Technical-Guftgu; sleep 5 ; done"]
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "200Mi"
+            limits:
+              cpu: "200m"
+              memory: "200Mi"
+
+ResourceQuota limits are namespace-wide.
+Your quota: limits.cpu: 400m
+Each pod requests 200m CPU → 2 pods = 400m ✅ works
+If you try 3 replicas → 3*200m = 600m ❌ exceeds quota → pod creation fails.
+
+Commands:
+kubectl apply -f deploymentspod.yaml 
+kubectl get deploy
+kubectl get rs 
+kubectl describe rs deployments-d57d75d6f
+kubectl get pods 
+kubectl delete -f deploymentspod.yaml 
+
+
+==============================Limit Range===================================
+###--- LimitRange Default CPU
+vi limitrange.yaml
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: cpu-limit-range
+spec:
+  limits:
+    - type: Container           # Applies to containers
+      default:
+        cpu: "1"               # Default maximum CPU if not specified in Pod
+      defaultRequest:
+        cpu: "0.5"             # Default requested CPU if not specified in Pod
+
+
+Commands:
+kubectl apply -f limitrange.yaml
+kubectl get limitrange -A
+kubectl describe limitrange cpu-limit-range
+kubectl delete -f limitrange.yaml 
+
+
+###--- LimitRange Default Memory
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-min-max-demo-lr
+spec:
+  limits:
+    - type: Container
+      max:
+        memory: 1Gi       # A container can't use more than 1Gi memory
+      min:
+        memory: 500Mi     # A container must request at least 500Mi memory
+
+
+
+=================================================================
+###--- Limit mention, Request not mention (limit=request, so here 1=1)
+vi cpu.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-2
+spec:
+  containers:
+    - name: default-cpu-demo-2-ctr   # Container name
+      image: nginx                   # Container image
+      resources:
+        limits:
+          cpu: "1"                   # CPU limit
+
+Commands:
+kubectl apply -f cpu.yaml
+kubectl get pods
+kubectl describe pod default-cpu-demo-2
+kubectl delete -f cpu.yaml
+
+
+=================================================================
+###--- Limit not mention, request mention (limit=1, request=750m)
+vi cpu.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-cpu-demo-3
+spec:
+  containers:
+    - name: default-cpu-demo-3-ctr   # Container name
+      image: nginx                   # Container image
+      resources:
+        requests:
+          cpu: "0.75"               # CPU requested
+
+Commands:
+kubectl apply -f default-cpu-demo-3.yaml
+kubectl get pods
+kubectl describe pod default-cpu-demo-3

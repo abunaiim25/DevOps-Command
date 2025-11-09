@@ -1,0 +1,59 @@
+--------------- Create/Add User ---------------
+
+# useradd -c "This is amniuser" amniuser === Created on home
+# grep amniuser /etc/passwd
+
+# useradd -d /user1 user1 === Created on / ( / = location root directory)
+  grep user1 /etc/passwd
+  grep user1 /etc/shadow === (not working for root permission)
+# useradd -e 25/08/2025 user2 === User created with expire_date
+  grep user2 /etc/shadow
+# useradd -f 15 user3 === User created with expire_duration
+  grep user3 /etc/shadow
+  
+User created, user with group wise:
+# useradd -G abu,naiim,rayhan,rayha,user2 user6 
+  id user6
+  tail -n 10 /etc/group 
+
+If you specify -M, the home directory will not be created, only the user account will be created.
+# useradd -M user9  
+  tail -n 10 /etc/group
+  id user9
+  cat /etc/default/useradd
+  tail -n 5 /etc/shadow
+
+Password not working becouse password plantext
+# useradd -p 12345 user10 === Not this encripted password 
+  tail -n 5 /etc/shadow
+# useradd -c "Hello" -p 12345 user11 === Comment & Not this encripted password
+  tail -n 5 /etc/shadow
+  tail -n 5 /etc/passwd
+
+Solution: Created user and password with encrypted
+# useradd user14
+# passwd user14
+  grep user14 /etc/shadow
+
+# useradd -u 60000 -m user15 === (-u = userid, -m = home)
+
+Final add user (All)
+# groupadd -g 60000 my_group
+# useradd -c "Final User" -d /user123 -m -e 2025-08-24 -f 10 -g 60000 -G abu,user1,user10,user14 -u 50000 user15
+  passwd user15
+  grep user15 /etc/shadow
+  
+username:password:userid:groupid:comment:home_directory:shell
+naiim:x:1000:1000:naiim:/home/naiim:/bin/bash
+
+useradd --help
+-c "Final User" === Full name / comment field
+-d /user123 === home directory
+-e 2025-08-24 === account expiration
+-f 10 === inactive days
+-g 60000 === primary group
+-G abu,user1,user10,user14,user3 === secondary groups
+-p 12345 === password
+-u 50000 === UID
+-w === exact word match
+user15 === username

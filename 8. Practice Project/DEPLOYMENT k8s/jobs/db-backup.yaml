@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-backup
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      volumes:
+        - name: backup
+          emptyDir: {}
+      containers:
+        - name: db-backup
+          image: mysql:8.0
+          env:
+            - name: MYSQL_PWD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: password
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: username
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-secret
+                  key: database
+          command:
+            - sh
+            - -c
+            - |
+              mysqldump -h mysql -u "$MYSQL_USER" -p"$MYSQL_PWD" "$MYSQL_DATABASE" > /backup/backup-$(date +%F-%T).sql || true
+          volumeMounts:
+            - name: backup
+              mountPath: /backup

@@ -1,0 +1,22 @@
+# deployment.yaml placeholder
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bidaapi
+  labels:
+    app: bidaapi
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bidaapi
+  template:
+    metadata:
+      labels:
+        app: bidaapi
+    spec:
+      containers:
+        - name: bidaapi
+          image: your-docker-repo/bidaapi:latest
+          ports:
+            - containerPort: 8080

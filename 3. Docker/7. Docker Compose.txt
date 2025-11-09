@@ -1,0 +1,9 @@
+https://github.com/docker/awesome-compose
+https://github.com/iam-veeramalla/three-tier-architecture-demo/blob/master/docker-compose.yaml
+
+# scp -r C:\Users\User\desktop\nginx-nodejs-redis naiim@192.168.174.138:/home/naiim/
+
+cd nginx-nodejs-redis/>
+# sudo firewall-cmd --permanent --add-port=443/tcp
+
+# sudo docker compose up 

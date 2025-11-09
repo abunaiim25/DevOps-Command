@@ -1,0 +1,106 @@
+--------------- LVM - Logical Volume Manager --------------- 
+
+we can combine multiple hard disks to create a single large virtual space (volume group)
+
+A single large partition/volume can be created from this virtual space (logical volume)
+
+1. Create partition
+2. Change partitin type
+3. Create physical volumes (pv)
+4. Create volume group (vg)
+5. Create logical volumes (lv)
+6. Format lv
+7. Mount lv
+
+fdisk → pvcreate → vgcreate → lvcreate → mkfs → mount
+
+------------------------------
+# lsblk 
+# disk add on VM manaually === add new 3 disk + old 1 = 4 disk 
+# lsblk 
+
+1. Create partition
+Example: fdisk /dev/sda
+n === Partation
+p === Check
+w === save & Exit
+# fdisk /dev/sda
+# fdisk /dev/sdb
+# fdisk /dev/sdc
+
+
+2. Change partitin type
+# fdisk /dev/sda
+# t 
+# l === lvm - 8E
+# p
+# w
+
+# fdisk /dev/sdb === same like sda
+# fdisk /dev/sdc === same like sdc
+
+# lsblk 
+
+
+3. Create physical volumes (pv):
+# pvs
+# pvcreate /dev/sda1 /dev/sdb1 /dev/sdc1
+# pvs 
+# pvdisplay === All disk information for pv 
+
+
+4. Create volume group (vg):
+# vgs
+# vgcreate VG1 /dev/sda1 /dev/sdb1 /dev/sdc1
+  or
+  vgcreate VG1 /dev/sda1 /dev/sdb1 === 20+20=40, baki 20 (my Preparance for excercise)
+# vgs
+# vgremove VG1 === if remove needed!, but not need this 
+
+
+5. Create logical volumes (lv):
+# lvs
+# lvcreate -L 39.99G -n LV1 VG1
+  or
+  lvcreate -l 100%FREE -n LV1 VG1
+# lvs 
+# lvremove /dev/VG1/LV1 === if remove needed!, but not need this 
+
+
+6. Format lv
+# mkfs.ext4 /dev/VG1/LV1
+# blkid 
+
+
+7. Mount lv
+# mkdir /lv1
+# mount /dev/VG1/LV1 /lv1
+# df -h   # mounted check
+
+8. Permanent Mount 
+# vi /etc/fstab
+/dev/VG1/LV1   /lv1   ext4   defaults   0 0
+
+
+
+If need Modify: 
+# lsblk
+# vgs
+# vgextend VG1 /dev/sdc1
+# vgs
+# lvextend -L +10G -r /dev/VG1/LV1
+  or
+  lvextend -l +100%FREE -r /dev/VG1/LV1
+# xfs_growfs /dev/VG1/LV1
+  or
+  resize2fs /dev/VG1/LV1
+  
+# lvreduce -L -25G /dev/VG1/LV1
+# lsblk
+# vgs
+  
+  
+# Logical volumes Remove: 
+# lvremove /dev/VG1/LV1
+  lvs 
+  

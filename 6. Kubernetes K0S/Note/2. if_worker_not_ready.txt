@@ -1,0 +1,29 @@
+
+### ✅ Updated Reset Method (for k0s v1.33+)
+
+#### 🧹 Step 1: Stop all k0s processes (Worker)
+sudo k0s stop
+sudo pkill -f k0s
+
+#### 🧽 Step 2: Run the standard reset (Worker)
+sudo k0s reset
+
+> ⚠️ এখানে যদি error আসে (যেমন API connect করতে না পারছে বা containerd.sock নাই), ignore করো। এটা normal কারণ worker এখনো master এর সাথে connect হয়নি।
+#### 💣 Step 3: Manually delete old data (this replaces `--force`) (Worker)
+sudo rm -rf /var/lib/k0s /etc/k0s /run/k0s
+
+### 🔁 Step 4: Fresh join again (Master)
+Controller node থেকে নতুন worker token নাও:
+sudo k0s token create --role=worker
+
+তারপর worker node এ চালাও: (Worker)
+sudo k0s worker "<নতুন token>" &
+sudo k0s worker "H4sIAAAAAAAC/2xVy27rOBbc5yv8A/c2KVm3YwOziB60TEd0SPFhcyeJvJb1siLLLw3m3wdxp4EZoHeHpw6qCPKgKuuP0g7n46lbzq7wpWgu59EO5+XLj9l3vXyZzWazwg7j8fexyEb7I7uM5Wk4jo8fJhuz5ew9BeN7CgMmDOZHP2QSi1RoTAES7ImBMaghTgXzWURCqmSvAXJTgX0NGslreCGth/IVhHsFBl17WRatXT41bsqRV7jF3ADGlOjfc9jjLNYVrxFj4rahDfINMBGThtAGxZQjyQSac+GVCdS9asqNkf1etPfKcvSpJPO10G4SN1sZSZcLNhiwiDhHhEW4ZF1xs4f+b6z6X4wL3NlIf1IpAw08RWtEZMR2JkQ6l9rbt1AlqN/zHdNJLV3tGJQJ6CeRCYWL4qAheF+RSAgZUIkkFRFIBY4MQM/ZFKDr15sIwSYbmjKNxZTH6MO2ep0Lr8zb+7HguOQtUkV7x7mTQBIVGw6wx7qyzx+vcxuyk6nxOq3Km5QmSBu/plAyI3XAdhqzVT9sFfCoIHwvynMS+xETFMhooW3thVbAJA+ZMLSvxcpbm93JNa0X5yE5p6qneQsGFR/cXOLJKgOlIIx0JBYVHQpV3lUsPR5iN0EE085EBCZDUhGWKb1S6gCCGtUWlWW+ugMl9WAclvEdKonTfBYC37JdT4yLx2xH2H53eKgV26qawBSZcxGhk3F9thV4R4IzFPJ0syu9YtXbhneHKQfknkC5FQ5eZ5NubFjfzPT22At4y1p9LSSGGZKVig1V8nCjgFU6Zjum5DtDsrJIx9toPhFIrwayLn3rj6aFN9NIN2vkhjmIvzuLft/20tayztxiskKeMtcfsnY/11PZ66o8baO1a6CR2WMkuYMyqgyhNfKZ07Osxn5QQ59Exk+krFlsED0uXCGkb0AT0Lb3RYQ73ui1qGFA1X7OBBZUMF+Iw5WL9Y2B6C4VizREO1rjlD0W19ShG7tDu73q27RlN+ZgpTgbklpu8oq92xptaWu+/mjIROGZyf/awYnVyOeA+F/6+xY9cufgbqPzxMI9zFf9Mbv1GxOTiq9wmUs/5jvywZW+kJAMzC3DdweKbSwj7Zh54TY+BWc3D2UsQHEVqyZL61eYcf0rm95c0h0A4zphq/EWdG9XwnGWuqa3UfnIOA64mgPjeHE64UBG8CiUlxTg9bHnb5DV4raNvH6rpDISPURIHvIxjrQiow7XwKoFltN6I4SusxXhpmJ4i9ZTHiz6DSgZQadrWkmaC30xYA2tgmHS3ibRyj5RRpIKf1LlbRIB74mrjyzCWIL7h6hMKm99X9RIyc4M+QqVWWRG9eUzseloZz62sQYEllXmamWF12sF5oTv52J685SSWRLiTeroT6vIaOJeykpGRbu4BMfXOW97kKeja3alkkj6e6BTFYwkVYuVEg2nrUeoWFSbSe9sw3ZakuN+Wt+I4x3TRjYcoJA43geL9YWL+yNx1hu1Ijur7v4HB5tvb0a8pgcKZCqjZpUK4stIPH35nZ7+9TT4sx2udljOynHsz8s//oAL5yf89foT/jn/CX+B5a/53H2ZzbqstctZDc4vxakb7X38Kyr+qr+j4js3nlNfjcv5ebrktrHjj/x0Gs/jkPX/z3YZBtuNP/5mejbrY2eWs+DU/T4eXvrB/raD7Qp7Xs7+/Z+XL9an+DfJP9A/hZ9XGE+17Zazz8dUXfufNZgapx//vP+eN7exPr78NwAA///swhrgBgcAAA==" &
+
+### 🔍 Step 5: Verify (controller node এ) (Master)
+sudo k0s kubectl get nodes
+
+তখন যদি সব ঠিক থাকে, দেখবে:
+master-node      Ready    control-plane   ...
+worker-node-1    Ready    <none>          ...
+

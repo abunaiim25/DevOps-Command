@@ -1,0 +1,69 @@
+--------------- NFS = Network File System ---------------
+সহজ করে বললে, এটা এমন একটা সিস্টেম যেটার মাধ্যমে এক কম্পিউটারের (server) ফোল্ডার বা ফাইল অন্য কম্পিউটার (client) নেটওয়ার্ক দিয়ে ব্যবহার করতে পারে, যেনো ওই ফোল্ডারটা তার নিজের লোকাল হার্ডডিস্কে আছে।
+
+Used to share a directory from server that can be mounted on client systems for centralized management.
+
+nfs-utils = NFS চালানোর টুলস
+rpcbind = NFS সার্ভিস-কমিউনিকেশন হেল্পার
+libnfs-idmap = user/group permission ঠিক রাখতে ইউটিলিটি
+
+/data 192.168.174.139(rw,sync,no_root_squash)
+192.168.174.139 = the NFS client machine’s IP address.
+/data → সার্ভারের শেয়ার করা ফোল্ডার
+192.168.174.139 → শুধু এই IP access পাবে
+rw → পড়া + লেখা দুটোই পারবে
+sync → ডাটা সরাসরি ডিস্কে লিখবে (নিরাপদ কিন্তু ধীর)
+no_root_squash → client মেশিনের root user যেন সার্ভারে root পারমিশন পায়। সাধারণত root_squash রাখা হয় যাতে root → nobody ইউজারে map হয়ে যায়।
+
+---------------------------------------------------------
+Install required packages:
+# yum install -y nfs-utils rpcbind
+
+# systemctl status nfs-utils
+# mkdir data
+# ls -ld data
+# chmod 777 data
+# ls -ld data
+# vi /etc/exports === /data 192.168.174.139(rw,sync,no_root_squash)
+
+Enable and start the services:
+# systemctl enable nfs-utils
+# systemctl start nfs-utils
+# systemctl status nfs-utils
+
+# systemctl enable rpcbind
+# systemctl start rpcbind
+# systemctl status rpcbind
+
+# systemctl enable nfs-server
+# systemctl start nfs-server
+# systemctl status nfs-server
+
+Re-export and check:
+# exportfs -r === if not error, all is okay
+# showmount -e 
+
+If the firewall is running, need to allow NFS-related
+# firewall-cmd --permanent --add-service=nfs
+# firewall-cmd --permanent --add-service=mountd
+# firewall-cmd --permanent --add-service=rpc-bind
+# firewall-cmd --reload
+
+
+Remote/other Computer:
+if need:
+# yum install -y nfs-utils rpcbind
+# systemctl enable rpcbind
+# systemctl start rpcbind
+# systemctl status rpcbind
+
+# showmount -e 192.168.174.139 === Connect with other device
+# mkdir nfs
+
+Temporary mount:
+# mount -t nfs 192.168.174.139:/data /nfs  
+
+if permanent mount:
+# vi /etc/fstab 
+  192.168.174.139:/data   /nfs     nfs     rw,sync,defaults    0 0
+  mount -a === /etc/fstab এ যতগুলো entry আছে, সবই চেক করে mount করে।

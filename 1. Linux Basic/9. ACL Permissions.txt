@@ -1,0 +1,94 @@
+--------------- ACL Permissions ---------------
+
+ACL - Access Control List 
+ACL is a list of permission that defines access of users on a file or directory.
+ACL - Permission for specific user or group
+1. getfacl = Check ACL permission on a file or directory.
+2. setfacl = Set ACL permission on a file or directory.
+
+drwxrwxrwx+ === here + is ACL 
+
+----- ACL for User -----
+  ls -l testfile
+# getfacl testfile === Get status
+  cat testfile 
+  
+Access off for naiim user:
+-m = modify
+# setfacl -m u:naiim:--- testfile === Now, naiim can not access testfile, but other users can accress. [-m=modify, u=user]
+  getfacl testfile
+  ls -l testfile
+  
+  
+----- ACL for group -----
+  Data folder read, write, execute on: 
+  chmod 777 data
+  ls -ld data
+  getfacl data
+  
+  Create group: 
+  tail -n 5 /etc/group
+  groupadd dhaka
+  gpasswd -M naiim,raj,user2 dhaka === -M = member list
+  tail -n 5 /etc/group
+  ls -ld data
+  
+dhaka group access off for data folder: 
+# setfacl -m g:dhaka:--- data === Now, dhaka group user's can not access data folder, but other group can accress. [-m=modify, u=user]
+  getfacl data
+  ls -ld data
+  
+  su naiim
+  cd data === only dhaka group users can not access on data folder 
+  
+----- Extra permission (rwx) through ACL -----
+# setfacl -m u:naiim:rwx data === Now, naiim user can access permission on data folder
+  getfacl data
+  
+  su naiim 
+  cd data === access
+  
+----- Remove the ACL of a specific user -----
+# setfacl -x u:naiim data === Now, naiim user can not access permission on data folder
+  getfacl data
+  
+  su naiim 
+  cd data === Permission denied
+  
+----- Remove all ACLs of an entire file/directory  -----
+# setfacl -b data === Remove all ACL 
+  getfacl data
+  ls -ld data
+
+----- Default ACL permission -----
+  ls -ld data
+# setfacl -dm u:naiim:- data === Now, new dir/file created with ACL. 
+  getfacl data
+
+
+----- ACL folder copy to others folder -----
+  mkdir abc
+  mkdir def
+# setfacl -m u:raj:- abc
+  ls -ld abc
+  ls -ld def 
+  getfacl abc
+
+# getfacl --access /abc | setfacl -M- /def === abc ACL copy to def ACL
+  getfacl def
+  
+  
+----- ACL file copy to file  -----
+  touch file1
+  touch file2 
+  ls -l file1
+  ls -l file2 
+# setfacl -m u:naiim:- file1
+# setfacl -m g:raj:- file1
+  getfacl file1
+  
+# getfacl file1 | setfacl --set-file=- file2
+  getfacl file2
+  ls -l file2 
+  
+  

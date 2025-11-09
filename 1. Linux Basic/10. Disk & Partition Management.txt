@@ -1,0 +1,85 @@
+--------------- Disk & Partition Management --------------- 
+
+# lsblk === Disk
+# init 0 === VM off
+# init 6 === VM Restart
+
+Manage disk and partitions on the linux system:
+1. Create a partition
+2. Delete a partition
+3. Create a partition
+4. Mount a partition (Temporary / Permanent)
+
+1. Fdisk === fdisk /dev/sda 
+2. mkfs
+3. mount(for temporary mount)
+         Permanent mount = entry infstab file
+		 
+
+# df -h === partition details show
+# df
+# df -Th === Type show
+# blkid === Partition information show
+
+
+Mount:
+mount /dev/sda1 /sda/sad1
+-------------------------
+Step 1: Disk Status দেখা
+# lsblk
+fdisk -l
+
+Step 2: নতুন Disk Add (VM হলে)
+# lsblk
+
+Step 3: Partition Create করা
+# fdisk /dev/sda
+n → new partition
+p → primary (বা e extended)
+Partition number দাও (যেমন 1)
+First sector → ডিফল্ট দাও (Enter)
+Last sector → সাইজ দাও (যেমন +2G)
+w → write & save
+
+Step 4: Partition Type Change (optional)
+fdisk /dev/sda
+t   # change type
+L   # list codes
+8e  # LVM type
+w   # save
+
+Step 5: File System Create (Format):
+# mkfs.ext4 /dev/sda1 === [sda1, sda2, sda3, sda4]
+or
+# mkfs.xfs /dev/sdb1 === [sda1, sda2, sda3, sda4]
+
+Step 6: Mount করা (Temporary)
+mkdir -p /sda_mount/sda1  === -p = no error if exists + make parents automatically
+mkdir -p /sda_mount/sda2
+mkdir -p /sda_mount/sda3
+mkdir -p /sda_mount/sda4
+
+Check:
+mount | grep sda_mount === Check, kicu dekhale mount hoyce
+Umount: (if needed)
+umount /sda_mount === umount
+
+Step 7: Permanent Mount (fstab)
+vi /etc/fstab
+/dev/sda1   /sda_mount/sda1   ext4   defaults   0 0
+/dev/sda2   /sda_mount/sda2   ext4   defaults   0 0
+/dev/sda3   /sda_mount/sda3   ext4   defaults   0 0
+
+Test করে দেখো:
+mount -a === যদি কোনো error না আসে, সঠিকভাবে permanent mount হয়ে গেছে।
+df -h
+
+
+Step 8: Resize Partition (LVM ব্যবহার করলে)
+
+
+
+
+
+
+

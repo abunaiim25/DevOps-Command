@@ -1,0 +1,205 @@
+# MariaDB Installation and Setup on Ubuntu
+
+### ⚙ Step 1: Update your system
+
+bash
+sudo apt update
+sudo apt upgrade -y
+ 
+
+
+Keeps your system packages up to date and secure.
+
+---
+
+### 🧩 Step 2: Install MariaDB server and client
+
+bash
+sudo apt install -y mariadb-server mariadb-client
+
+
+
+---
+
+### 🚀 Step 3: Start and enable MariaDB
+
+bash
+sudo systemctl enable --now mariadb
+sudo systemctl status mariadb --no-pager
+
+
+
+✅ If you see active (running), MariaDB is successfully running.
+
+---
+
+### 🔐 Step 4: Secure MariaDB installation
+
+Run the built-in security script:
+
+bash
+sudo mysql_secure_installation
+
+
+
+When prompted, respond *Y* to all recommended options:
+
+- Set root password → Y
+- Remove anonymous users → Y
+- Disallow remote root login → Y
+- Remove test database → Y
+- Reload privilege tables → Y
+
+---
+
+### 💻 Step 5: Log in to MariaDB
+
+- If you set a root password:
+
+bash
+mysql -u root -p
+
+
+
+- If using unix_socket authentication:
+
+bash
+sudo mariadb
+
+
+
+---
+
+### 🧱 Step 6: Create a database and user
+
+Inside the MariaDB shell:
+
+CREATE USER 'naiim'@'%' IDENTIFIED BY '12345';
+GRANT ALL PRIVILEGES ON *.* TO 'naiim'@'%' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+EXIT;
+
+
+
+
+---
+
+### 🧠 Step 7: Test your new user
+
+bash
+mysql -u naiim -p 
+
+
+
+✅ If you can log in and see MariaDB [mydb]>, it’s working perfectly!
+
+---
+
+### 🌐 Step 8: Allow remote connections
+
+Check MariaDB is listening on your server:
+
+bash
+sudo netstat -tulnp | grep mariadb
+
+
+
+Edit the MariaDB config file:
+
+bash
+sudo vim /etc/mysql/mariadb.conf.d/50-server.cnf
+
+
+
+Find the line:
+
+
+bind-address = 127.0.0.1
+
+
+
+Replace it with your server IP (e.g., 192.168.10.132):
+
+
+bind-address = 192.168.10.132
+
+
+
+Save and exit (Ctrl+O → Enter → Ctrl+X).
+
+Restart MariaDB:
+
+bash
+sudo systemctl restart mariadb
+
+
+
+sudo ufw allow 3306/tcp
+sudo ufw reload
+
+
+
+
+
+
+
+
+
+---
+
+### 🔑 Step 9: Grant remote access to root (optional)
+
+sql
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'192.168.10.42' IDENTIFIED BY '12345Q' WITH GRANT OPTION;
+FLUSH PRIVILEGES;
+
+
+
+---
+
+🎉 MariaDB is now installed, secured, and ready for both local and remote access.
+
+---
+
+If you want, I can also make a *colorful emoji-style version* of these steps that’s easier to follow at a glance. Do you want me to do that?
+
+### You said:
+
+CREATE DATABASE mydb;
+CREATE USER 'myuser'@'localhost' IDENTIFIED BY 'mypassword';
+GRANT ALL PRIVILEGES ON mydb.* TO 'myuser'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+
+for all host and full privileges, 
+username lubna
+pass its@1998
+
+### ChatGPT said:
+
+Sure! If you want to create a MariaDB user lubna with password its@1998 that has *full privileges on all databases* and can connect from *any host*, here’s the SQL you should run inside the MariaDB shell:
+
+sql
+-- Create the user for all hosts
+CREATE USER 'lubna'@'%' IDENTIFIED BY 'its@1998';
+
+-- Grant full privileges on all databases
+GRANT ALL PRIVILEGES ON *.* TO 'lubna'@'%' WITH GRANT OPTION;
+
+-- Apply the changes
+FLUSH PRIVILEGES;
+
+-- Exit the MariaDB shell
+EXIT;
+
+
+
+✅ Explanation:
+
+- 'lubna'@'%' → % means the user can connect from *any host*.
+- GRANT ALL PRIVILEGES ON *.* → gives access to *all databases and tables*.
+- WITH GRANT OPTION → allows this user to grant privileges to other users.
+
+---
+
+If you want, I can also give the *same setup plus a local-only user* for extra security, so you can safely use remote access while keeping root-level access restricted. Do you want me to do that?

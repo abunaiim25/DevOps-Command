@@ -1,0 +1,13 @@
+# db-backup.yaml placeholder
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-backup
+spec:
+  template:
+    spec:
+      containers:
+        - name: backup
+          image: your-docker-repo/db-backup:latest
+          command: ["sh", "-c", "echo Backing up database"]
+      restartPolicy: OnFailure

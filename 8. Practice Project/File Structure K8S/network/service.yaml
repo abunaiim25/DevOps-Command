@@ -1,0 +1,11 @@
+# service.yaml placeholder
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-service
+spec:
+  selector:
+    app: bidaapi
+  ports:
+    - port: 80
+      targetPort: 8080

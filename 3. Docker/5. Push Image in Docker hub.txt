@@ -1,0 +1,56 @@
+------------------Push Image in Docker hub------------------
+# docker run -it ubuntu /bin/bash
+  touch file{1..5}
+  exit
+  
+# docker commit elastic_easley image1
+  docker images
+
+Docker Hub এ গিয়ে রিপোজিটরি বানাও
+“Create Repository” চাপো
+নাম দাও → project1
+
+Account login on docker hub:
+# docker login -u mdnaiim
+
+Send docker hub:
+# docker tag image1 mdnaiim/project1 
+  docker push mdnaiim/project1
+  
+Another man from USA:
+# docker pull mdnaiim/project1
+  docker run -it --name mycon mdnaiim/project1
+
+
+---------------------------------------
+AgroBd App & database:
+Dockerfile
+docker-compose.yaml
+
+docker exec -it laravel-agrobd-web /bin/bash
+docker exec -it laravel-agrobd-db /bin/bash
+mysql -u root -p
+SHOW DATABASES;
+SHOW TABLES;
+
+docker commit laravel-agrobd-web agrobd-image
+docker images
+
+Docker Hub এ গিয়ে রিপোজিটরি বানাও
+“Create Repository” চাপো
+নাম দাও → agrobd-image
+
+Account login on docker hub:
+# docker login -u mdnaiim
+
+Send docker hub:
+# docker tag agrobd-image mdnaiim/agrobd-image
+  docker push mdnaiim/agrobd-image
+
+
+privet for k8s:
+kubectl create secret docker-registry regcred \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_PASSWORD \
+  --docker-email=YOUR_EMAIL

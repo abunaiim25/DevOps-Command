@@ -1,0 +1,117 @@
+--------------- SELinux - Security Enhanced Linux ---------------
+Example:
+ধরেন আপনার সার্ভারে Apache ওয়েব সার্ভার চলছে।
+SELinux ছাড়া → যদি Apache হ্যাক হয়, তাহলে attacker সিস্টেমের অন্য ফাইলেও ঢুকে পড়তে পারে।
+SELinux সহ → Apache শুধু /var/www/html অ্যাক্সেস করতে পারবে, /etc/passwd বা /home টাচই করতে পারবে না।   
+ 
+SELinux Context
+4 type context bases: 
+user base(_u)
+rule base(_r)
+type base(_t) === only i will change this 
+sensitivity base (50)
+
+unconfined_u:object_r:etc_runtime_t:s0 testfile
+user_base:rule_base:type_base:sensitivity_base
+
+Redhat context bases on 3rd type that is Type base (_t)
+for file = ls -Z <file-path>
+for dir = ls -dZ <dir-path>
+
+* SELinux have 3 mode:
+Enforcing:
+মানে যেকোনো unauthorized কাজ (যেটা policy allow করে না) → block করবে + log করবে।
+Example: Apache যদি /etc/shadow access করতে চায় → “Permission denied” হবে। Production server-এর জন্য recommended।
+
+Permissive:
+এখানে SELinux rules চেক করে, কিন্তু block করে না। Unauthorized কাজ allow করবে, কিন্তু সাথে log এ warning লিখে রাখবে।
+Example: Apache /etc/shadow পড়তে পারবে, কিন্তু log-এ note হবে যে এটা policy violation। Debugging / testing এ কাজে লাগে।
+
+Disabled:
+এখানে SELinux পুরাই বন্ধ। কোন rules check হবে না, কোন log হবে না।
+Basically, system behave করবে normal Linux permission (user/group/ACL) দিয়ে। Security lowest → production server এ dangerous।
+
+* Mode Change:
+Temporary Change: 
+setenforce 0 বা setenforce permissive দিলে system reboot করলে আবার আগের default mode (usually Enforcing) এ ফিরে যাবে।
+Check Mode: getenforce
+Change selinux mode: setenforce === setenforce enforcing|permissive|1|
+
+Permanent Change:
+SELinux config file = /etc/selinux/config
+
+* Context
+SELinux প্রতিটা ফাইল, ডিরেক্টরি, port, process–এর সাথে একটা security label (context) সেট করে রাখে।
+Context Change:
+chcon → temporary SELinux label change
+semanage fcontext → permanent label change
+
+
+---------------------
+# ls -Z testfile === For testfile context
+# ls -Z === For all file/dir context
+
+Temporary Change: 
+# getenforce
+# setenforce
+# setenforce permissive
+# getenforce
+
+Permanent Change: 
+# vi /etc/selinux/config
+# i === keyboad
+  SELINUX=enforcing
+  SELINUX=permissive
+  SELINUX=disabled
+# :wq! === Esc(Keyboard) 
+# init 6 === restart system 
+
+
+----------------SELinux Context-----------------------
+1. SELinux Context Basics
+user:role:type:level  === সবচেয়ে important অংশ হলো type (যেমন httpd_sys_content_t)। কারণ SELinux policy মূলত type এর ওপর ভিত্তি করে control করে।
+
+mkdir -p /var/www/html
+ls -ld /var/www/html === html file ase kina? na thakle index.html file banate hobe
+echo "Hello from Apache" > /var/www/html/index.html
+
+2. Context দেখা
+# ls -Z /var/www/html
+
+3️. Temporary Context Change (chcon)
+-t → type পরিবর্তন
+-u → user পরিবর্তন
+-r → role পরিবর্তন
+-l → level পরিবর্তন
+# chcon -t httpd_sys_content_t /var/www/html/index.html
+# ls -Z /var/www/html
+
+restorecon  কোনো ফাইল বা ফোল্ডারের label (security context) যদি ভুল হয়ে যায় বা পরিবর্তন হয়ে যায়, সেটা ঠিক করে দেয়।
+# restorecon -Rv /var/www/html
+# ls -Z /var/www/html
+
+Create web server:
+# lsblk
+# yum install httpd -y 
+ApacheRun:
+# systemctl start httpd 
+# systemctl enable httpd === apache ke boot 
+# systemctl status httpd === run or not
+# ifconfig
+
+
+---------------------------------------
+-----Context Change (Temporary) ------
+  ls -Z testfile 
+# chcon -t default_t testfile === change context 
+  ls -Z testfile 
+  man restorecon
+# restorecon -Rv testfile === Previous Context restore 
+
+Context Change (Permanent): 
+# semanage fcontext -a -t samba_share_t /testfile
+# restorecon -vvRv testfile
+  ls -Z testfile
+  
+# cd /var/www/html/
+# touch index.html

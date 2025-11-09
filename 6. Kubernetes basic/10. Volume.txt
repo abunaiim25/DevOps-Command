@@ -1,0 +1,88 @@
+-------------------- EmptyDir --------------------
+c1 and c2 share stroge - volume 
+
+vi emptyDir.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolemptydir
+spec:
+  containers:
+    - name: c1
+      image: centos:7        
+      command: ["/bin/bash", "-c", "sleep 15000"]
+      volumeMounts:
+        - name: xchange
+          mountPath: "/tmp/xchange"
+
+    - name: c2
+      image: centos:7
+      command: ["/bin/bash", "-c", "sleep 10000"]
+      volumeMounts:
+        - name: xchange
+          mountPath: "/tmp/data"
+
+  volumes:
+    - name: xchange
+      emptyDir: {}
+
+
+
+# Apply and verify
+kubectl apply -f emptyDir.yaml
+kubectl get pods -o wide 
+
+Container c1:
+kubectl exec -it myvolemptydir -c c1 -- /bin/bash
+cd tmp/xchange
+vi test
+
+Container c2:
+kubectl exec -it myvolemptydir -c c2 -- /bin/bash
+cd tmp/data
+ls
+cat test
+
+delete:
+kubectl delete pod myvolemptydir
+
+
+-------------------- HostPath --------------------
+vi hostpat.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myvolhostpath
+spec:
+  containers:
+    - name: testc
+      image: centos:7
+      command: ["/bin/bash", "-c", "sleep 15000"]
+      volumeMounts:
+        - name: testvolume       # volume এর নাম match করতে হবে
+          mountPath: /tmp/hostpath
+  volumes:
+    - name: testvolume
+      hostPath:
+        path: /tmp/data          # হোস্ট মেশিনের path
+        type: DirectoryOrCreate  # যদি না থাকে তবে ডিরেক্টরি তৈরি করে নেবে
+
+# Apply and verify
+kubectl apply -f emptyDir.yaml
+kubectl get pods -o wide 
+
+Outside Container:
+cd /tmp/data
+echo "Love You" > myfile
+ls
+
+Inside pod:
+kubectl exec myvolhostpath -- ls /tmp/
+kubectl exec myvolhostpath -- ls /tmp/hostpath
+cat myfile
+
+or inside container:
+kubectl exec myvolhostpath -it -- /bin/bash
+cd /tmp/hostpath

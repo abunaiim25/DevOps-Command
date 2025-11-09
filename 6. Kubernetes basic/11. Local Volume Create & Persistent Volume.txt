@@ -1,0 +1,137 @@
+Local VM-এ ২০ জিবি ভলিউম বানানো
+
+1️⃣ VMware Workstation / Player খুলো
+যেই VM-এ ডিক্স attach করতে চাও, সেটি সিলেক্ট করো।
+
+2️⃣ VM Settings এ যাও
+VM → Settings → Add... → Hard Disk
+
+3️⃣ Disk Type নির্বাচন
+SCSI (Recommended) বা IDE
+Next
+
+4️⃣ Create a new virtual disk
+Capacity: 20 GB
+Disk Provisioning:
+Split into multiple files (flexible)
+Store as a single file (performance বেশি)
+Finish চাপো।
+
+5️⃣ Disk attach করা
+নতুন ডিক্স এখন VM-এ attach হয়ে গেছে।
+Apply / OK চাপো।
+
+6️⃣ VM চালু করো
+Linux VM হলে, terminal থেকে নতুন disk detect করতে পারো:
+lsblk
+o/t:
+নতুন ২০ জিবি disk /dev/sdb হিসেবে দেখাবে।
+
+7️⃣ Disk format ও mount করো (Linux VM হলে):
+sudo mkfs.ext4 /dev/sdb
+sudo mkdir -p /mnt/myvolume
+sudo mount /dev/sdb /mnt/myvolume
+
+যদি permanent mount চাই, /etc/fstab-এ add করতে হবে:
+vi /etc/fstab
+/dev/sdb /mnt/myvolume ext4 defaults 0 0
+
+
+----- Kubernetes Persistent Volume (PV) -----
+
+---### Persistent Volume (PV):
+একটা সার্ভারে (বা ক্লাউডে) স্টোরেজ স্পেস রিজার্ভ করে রাখছিস। এই স্পেসটাই হলো PersistentVolume।
+
+vi mylocalpv.yaml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mylocalpv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/myvolume   # এখানে host machine-এ existing directory path
+
+Retain → PV delete হয় না, data safe থাকে। পরবর্তীতে manually PV reuse করা যায়।
+Recycle → PV এর content simple delete/clean করা হয়, তারপর reuse করা যায়। (প্রায় Deprecated)
+Delete → PV সঙ্গে attached storage (যেমন EBS) automatic delete হয়ে যায়।
+
+kubectl apply -f mylocalpv.yaml
+kubectl get pv
+
+
+---### Persistent Volume Claim (PVC):
+PVC মানে — Pod বলে, “আমাকে একটা 1GB storage দে, আমি PV থেকে claim করব।”
+
+vi pvc.yaml
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mylocalclaim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+kubectl apply -f pvc.yaml
+kubectl get pvc
+
+
+---### PVC deploy
+vi deploypvc.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pvdeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mypv
+  template:
+    metadata:
+      labels:
+        app: mypv
+    spec:
+      containers:
+        - name: shell
+          image: centos:7
+          command: ["/bin/bash", "-c", "sleep 10000"]
+          volumeMounts:
+            - name: mypd
+              mountPath: "/tmp/persistent"
+      volumes:
+        - name: mypd
+          persistentVolumeClaim:
+            claimName: mylocalclaim # must match on pvc name 
+
+
+kubectl apply -f deploypvc.yaml
+kubectl get deploy
+kubectl get pods
+kubectl get rs
+
+Inside container:
+kubectl exec -it pvdeploy-8db7c8f77-jgrgt -- /bin/bash
+cd /tmp/persistent
+echo "Hello PV" > test.txt
+cat test.txt
+exit
+
+Delete to check:
+kubectl delete pod pvdeploy-8db7c8f77-jgrgt
+kubectl get pods
+
+Again Inside container:
+kubectl exec -it pvdeploy-8db7c8f77-bgwfw -- /bin/bash
+cd /tmp/persistent
+cat test.txt 

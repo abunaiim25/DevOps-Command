@@ -1,0 +1,22 @@
+----- Docker port mapping,restart container,exec container and docker expose -----
+
+# docker run -td --name techserver -p 80:80 ubuntu 
+  docker ps
+  docker port techserver === mapping port show
+  
+# docker exec -it techserver /bin/bash === go inside container 
+  apt-get update === ubuntu update 
+  apt-get install appache2 -y
+  mkdir -p /var/www/html
+  cd /var/www/html
+  
+  apt-get install -y vim nano === if not have vi
+  vi index.html
+  service apache2 start / systemctl start apache2
+  
+Another one:
+# docker run -d --name myjenkins -p 8080:8080 jenkins/jenkins
+
+jenkins:
+তুমি কোড GitHub/GitLab/Bitbucket-এ push করো 👉
+Jenkins অটোমেটিক ভাবে সেটা pull করে build/test/deploy করে ফেলে 🚀

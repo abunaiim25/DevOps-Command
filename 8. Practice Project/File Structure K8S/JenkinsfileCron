@@ -1,0 +1,17 @@
+// JenkinsfileCron template = JenkinsfileCron (cron jobs deployment)
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://your-repo.git'
+            }
+        }
+        stage('Deploy Jobs') {
+            steps {
+                sh 'kubectl apply -f jobs/cronjob-cleanup.yaml'
+                sh 'kubectl apply -f jobs/db-backup.yaml'
+            }
+        }
+    }
+}

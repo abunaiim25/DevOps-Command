@@ -1,0 +1,107 @@
+
+## 🧩 লক্ষ্য:
+https://test-vms.oss.net.bd
+↓
+Tomcat / App Server (running on 8080 at 192.168.10.203)
+
+--------------------------------------------------------------------------
+For local pc IP:
+## 🧱 Step 1: Hosts file edit (local DNS simulation)
+যেহেতু তুই `192.168.10.203` IP ব্যবহার করতেছিস (মানে internal network),
+তোর পাবলিক DNS record কাজ করবে না।
+তাই **hosts file** edit করতে হবে যে কম্পিউটার থেকে তুই site access করবি।
+### 👉 Windows এ:
+1. Run as Administrator → Notepad খুলে ফাইলটা খোল:
+   C:\Windows\System32\drivers\etc\hosts
+2. শেষে লিখে দে:
+   192.168.10.203   vms-demo.oss.net.bd
+
+### 👉 Linux / macOS এ:
+sudo nano /etc/hosts
+লিখে দে:
+192.168.10.203   vms-demo.oss.net.bd
+
+এখন যখনই `vms-demo.oss.net.bd` তুই ব্রাউজারে দিবি,
+ওটা `192.168.10.203` তে যাবে — অর্থাৎ local proxy সার্ভারে। 😎
+--------------------------------------------------------------------------
+
+
+## ⚙️ Step 2: NGINX install
+তোর server (192.168.10.203) এ nginx ইনস্টল:
+sudo apt update
+sudo apt install nginx -y
+
+
+## 🔁 Step 3: NGINX Reverse Proxy Config (for HTTPS)
+নতুন config ফাইল তৈরি কর:
+sudo vim /etc/nginx/sites-available/test-vms.conf
+
+
+তারপর লিখে দে ⬇️
+(এইটা আমি SSL সহ version, self-signed certificate setup সহ)
+
+# Define upstream (backend) server group
+upstream test_vms_backend {
+    server 192.168.10.203:8080;  # Tomcat or backend app
+    keepalive 32;
+}
+
+# HTTP -> HTTPS redirect
+server {
+    listen 80;
+    server_name test-vms.oss.net.bd;
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server
+server {
+    listen 443 ssl;
+    server_name test-vms.oss.net.bd;
+
+    ssl_certificate /etc/ssl/certs/test-vms.crt;
+    ssl_certificate_key /etc/ssl/private/test-vms.key;
+
+    location / {
+        proxy_pass http://test_vms_backend;   # use upstream name here
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+
+## 🔐 Step 4: Self-Signed SSL Certificate বানানো
+যেহেতু local IP দিয়ে কাজ করতেছিস, **Let's Encrypt SSL কাজ করবে না**
+(কারণ domain publicly resolve হয় না)
+তাই নিজে থেকেই certificate বানাতে হবে 👇
+
+sudo mkdir -p /etc/ssl/private
+sudo openssl req -x509 -nodes -days 365 \
+  -newkey rsa:2048 \
+  -keyout /etc/ssl/private/test-vms.key \
+  -out /etc/ssl/certs/test-vms.crt
+
+
+
+## 🔁 Step 5: Enable config + Restart nginx
+sudo ln -s /etc/nginx/sites-available/test-vms.conf /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+
+
+## 🔍 Step 6: Test
+ব্রাউজারে গিয়ে:
+https://test-vms.oss.net.bd
+
+curl ifconfig.me
+ping test-vms.oss.net.bdvms.oss.net.bd
+
+
+## ✅ Bonus: যদি LAN এর অন্য মেশিন থেকে খুলতে চাস
+ওই মেশিনের hosts ফাইলে একই লাইন যোগ কর:
+vim /etc/hosts
+192.168.10.203   vms-demo.oss.net.bd
+
+

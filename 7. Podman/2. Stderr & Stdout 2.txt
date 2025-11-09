@@ -1,0 +1,142 @@
+
+
+## 🧩 চূড়ান্ত ও ক্লিন সেটআপ (Container ভেতরে stdout/stderr log দেখার জন্য)
+
+### **Step 1: লগ ফোল্ডার তৈরি করো (Host Side)**
+mkdir -p /root/logs
+
+---
+
+### **Step 2: Container চালাও Tomcat সহ**
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /opt/tomcat/bin/catalina.sh run > /opt/tomcat/logs/stdout.log 2> /opt/tomcat/logs/stderr.log
+
+  /bin/sh -c "/opt/tomcat/bin/catalina.sh run >> /opt/tomcat/logs/stdout.log 2>> /opt/tomcat/logs/stderr.log"
+
+
+👉 এখানে `>>` মানে `append` (নতুন log আগেরটার সাথে যুক্ত হবে)
+👉 `2>>` মানে শুধুমাত্র error (`stderr`) redirect হবে `stderr.log` এ
+
+---
+
+### **Step 3: Container এর ভেতরের catalina.sh ঠিক করো**
+
+Container এ ঢুকে যাও:
+
+```bash
+podman exec -it tomcat-https sh
+```
+
+তারপর ফাইল খোলো:
+
+```bash
+vi /opt/tomcat/bin/catalina.sh
+```
+
+এই লাইনটা খুঁজে বের করো:
+
+```bash
+"$CATALINA_OUT" 2>&1 &
+```
+
+এটা replace করো নিচের মতো করে:
+
+```bash
+>> "$CATALINA_BASE"/logs/stdout.log 2>> "$CATALINA_BASE"/logs/stderr.log &
+```
+
+সেভ করো, বের হয়ে এসো:
+
+```
+:wq
+exit
+```
+
+---
+
+### **Step 4: systemd সার্ভিস তৈরি করো**
+
+```bash
+sudo vi /etc/systemd/system/tomcat.service
+```
+
+ভেতরে রাখো:
+
+```ini
+[Unit]
+Description=Tomcat Podman Container
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a tomcat-https
+ExecStop=/usr/bin/podman stop -t 10 tomcat-https
+
+[Install]
+WantedBy=multi-user.target
+```
+
+🧠 **নোট:**
+`StandardOutput` এবং `StandardError` systemd তে এখন দরকার নেই, কারণ তুমি container এর ভেতরেই লগ ফাইল আলাদা করে সংরক্ষণ করছো `/opt/tomcat/logs` ফোল্ডারে।
+
+---
+
+### **Step 5: systemd reload করো**
+
+```bash
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart tomcat
+```
+
+---
+
+### **Step 6: Container এর ভেতরে লগ চেক করো**
+
+```bash
+podman exec -it tomcat-https sh
+cd /opt/tomcat/logs/
+ls
+```
+
+তুমি দেখতে পাবে:
+
+```
+catalina.out
+stdout.log
+stderr.log
+localhost_access_log.*
+```
+
+এখন:
+
+```bash
+tail -f /opt/tomcat/logs/stdout.log
+```
+
+অথবা
+
+```bash
+tail -f /opt/tomcat/logs/stderr.log
+cat
+```
+
+---
+
+## ✅ ফলাফল
+
+এভাবে তোমার container-এর ভেতরেই `stdout` আর `stderr` আলাদা আলাদা ফাইলে লগ হবে:
+
+* `/opt/tomcat/logs/stdout.log` → সাধারণ আউটপুট
+* `/opt/tomcat/logs/stderr.log` → ত্রুটি বা এক্সেপশন
+
+আর এই `/root/logs` host-এও mirror হবে, কারণ তুমি volume mount করেছো।
+
+---
+

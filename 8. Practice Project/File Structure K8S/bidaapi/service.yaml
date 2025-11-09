@@ -1,0 +1,13 @@
+# service.yaml placeholder
+apiVersion: v1
+kind: Service
+metadata:
+  name: bidaapi
+spec:
+  selector:
+    app: bidaapi
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  type: ClusterIP

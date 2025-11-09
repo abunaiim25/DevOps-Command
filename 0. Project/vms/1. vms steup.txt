@@ -1,0 +1,64 @@
+###--- 1. Database mariadb setup
+a. Create user on server and connection on sqlyog
+b. Connection with keycloak
+
+
+###--- 2. keycloak manifest create and deploy: 
+D:\Commends\0. Project\vms\manifest
+http://180.94.20.17:31067/idp/
+
+
+###--- 3. Dockerfile based Image
+sudo apt install docker.io -y
+
+dockerfile_tomcat_based: D:\Commends\0. Project\vms\Docker\dockerfile _tomcat_based
+
+docker build -t mdnaiim/tomcat-based-img .
+docker login
+docker push mdnaiim/tomcat-based-img
+
+
+
+
+###--- 4. Manifest files:
+D:\Commends\0. Project\vms\manifest\qpe
+D:\Commends\0. Project\vms\manifest\qpsdc
+D:\Commends\0. Project\vms\manifest\qServer4_7
+
+Host vm to pod
+kubectl cp /home/naiim/vms/war_file/amni.zip -n demo qserver47-78f97c986b-pjp4f:/opt/tomcat/webapps/
+kubectl cp /home/naiim/vms/war_file/qServer4_7.war -n demo qserver47-78f97c986b-pjp4f:/opt/tomcat/webapps/
+
+kubectl exec -it qpe-5b7674c8b9-xb8xs -n qpe -- /bin/bash
+
+http://180.94.20.17:31067/qpsdc/admin/index.jsp
+http://180.94.20.17:31067/qpe
+
+
+###--- 5. Connection db and war
+
+
+###--- 6. Redis part
+D:\Commends\0. Project\vms\manifest\redis
+
+Inside container:
+apt update
+apt install redis-tools -y
+redis-cli -h redis-service.redis.svc.cluster.local -p 6379
+
+ping
+set testkey "from-tomcat"
+get testkey
+
+
+###--- 7. MinIO
+D:\Commends\0. Project\vms\manifest\MiniIO
+http://180.94.20.17:32001
+
+
+###--- 8. Data hub
+D:\Commends\0. Project\vms\Docker\Dockerfile_datahub
+
+docker build -t mdnaiim/datahub-img .
+docker login
+docker push mdnaiim/datahub-img

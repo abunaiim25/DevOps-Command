@@ -1,0 +1,45 @@
+--------------- usermod - modify existing user  ---------------
+
+# useradd --help
+tail -n 10 /etc/passwd
+
+Modify Comment:
+# usermod -c "This is Final" user14
+  grep user14 /etc/passwd
+
+Modify Directory:
+usermod -d /newDir user14 চালালে শুধু user14 এর home directory path /etc/passwd এ পরিবর্তন হবে, কিন্তু ওই /newDir ডিরেক্টরিটা অটোমেটিক তৈরি হয় না।
+# usermod -d /newDir user14
+  grep user14 /etc/passwd
+  ls / 
+Solution: 
+# mkdir /newDir
+# chown user14:user14 /newDir
+  chmod 700 /newDir
+  ls -ld /newDir
+
+Modify account expiration:
+chage -l user14
+grep user14 /etc/shadow
+# usermod -e 2025-08-24 user14
+chage -l user14
+
+/etc/login.defs হলো system config file:
+vi /etc/login.defs
+
+
+
+--------------- userdel - Delete existing user  ---------------
+Without group user remove:
+# userdel --help
+# userdel -rf amniuser
+  ls / === No amniuser 
+  ls /var/spool/mail/ === No amniuser 
+  
+Group user remove:
+# tail -n 30 /etc/group 
+# rm -rf /home/user10/ === Directory deleted but not deleted group user
+  ls /home 
+  tail -n 30 /etc/group === Not remove group user 
+Solution:
+groupdel -f user10

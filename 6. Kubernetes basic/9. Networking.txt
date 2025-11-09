@@ -1,0 +1,201 @@
+-------------------- Node-1 - Pod1[c00 and c01] communication --------------------
+vi pod1.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod
+spec:
+  containers:
+    - name: c00
+      image: ubuntu
+      command: ["/bin/bash", "-c", "while true; do echo Hello-Bhupinder; sleep 5; done"]
+
+    - name: c01
+      image: httpd
+      ports:
+        - containerPort: 80
+
+
+Apply and verify:
+kubectl apply -f pod1.yaml
+kubectl get pods 
+
+Inside container (check container communication work or not):
+kubectl exec testpod -it -c c00 -- /bin/bash
+apt update && apt install -y curl
+curl localhost:80
+o/t: 
+<html><body><h1>It works!</h1></body></html>
+exit
+
+
+
+-------------------- Node-1 - Pod1[c01] and Pod2[c02] communication --------------------
+One:
+vi pod2.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod-nginx-latest
+spec:
+  containers:
+    - name: c01
+      image: nginx:latest   
+      ports:
+        - containerPort: 80
+
+====================
+
+Another one:
+vi pod3.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: testpod-httpd
+spec:
+  containers:
+    - name: c02
+      image: httpd
+      ports:
+        - containerPort: 80
+
+
+Apply and verify:
+kubectl apply -f pod1.yaml
+kubectl get pods 
+
+Inside container (check pod communication work or not):
+apt update && apt install -y curl
+kubectl exec -it testpod-nginx-latest -c c01 -- /bin/bash
+curl 10.244.0.10
+
+
+
+-------------------- Cluster Ip --------------------
+Node-1 of Pod1 
+Node-2 of Pod2 
+Node-3 of Pod3  
+Now Pod1, Pod2, Pod3 communication inside cluster
+
+
+vi deploy.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydeployments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: deployment
+  template:
+    metadata:
+      name: testpod1
+      labels:
+        name: deployment
+    spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+            - containerPort: 80
+
+# Apply and verify
+kubectl apply -f pod5.yaml 
+kubectl get pods -o wide 
+kubectl get deploy
+
+====================
+
+vi service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: demoservice
+spec:
+  selector:
+    name: deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
+
+# Apply and verify
+kubectl apply -f service.yaml
+kubectl get pods -o wide 
+kubectl get svc 
+curl 10.103.87.217:80
+
+
+-------------------- NodePort --------------------
+Service accesable from outside the Cluster
+
+vi deploy.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydeployments
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: deployment
+  template:
+    metadata:
+      name: testpod1
+      labels:
+        name: deployment
+    spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+            - containerPort: 80
+
+# Apply and verify
+kubectl apply -f deploy.yaml 
+kubectl get pods -o wide 
+kubectl get deploy
+
+
+====================
+
+vi service.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: demoservice
+spec:
+  selector:
+    name: deployment
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort
+
+
+# Apply and verify
+kubectl apply -f service.yaml
+kubectl get pods -o wide 
+kubectl get svc 
+kubectl describe svc demoservice
+
+minikube ip
+curl http://192.168.49.2:31475
+o/p:
+<html><body><h1>It works!</h1></body></html>
+
+
+
+
+

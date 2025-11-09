@@ -1,0 +1,71 @@
+🔹Docker Install
+apt install -y docker.io
+systemctl enable --now docker
+docker --version
+
+
+🔹 kubectl Install (Kubernetes command-line tool):
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+kubectl version --client
+which kubectl
+
+
+🔹 Install Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+chmod +x minikube-linux-amd64
+sudo mv minikube-linux-amd64 /usr/local/bin/minikube
+minikube version
+
+
+
+🔹 Install crictl:
+# Download latest crictl
+VERSION="v1.30.0"   # compatible with Kubernetes 1.34
+curl -LO https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz
+sudo tar -C /usr/local/bin -xzf crictl-$VERSION-linux-amd64.tar.gz
+crictl --version
+
+
+🔹  Minikube supported file install & Minikube Management
+apt install -y conntrack socat               # required dependency for Minikube
+minikube start --vm-driver=none              # start minikube
+minikube status                              # check minikube status
+kubectl version 
+
+
+
+
+vi pod2.yaml                                  # open pod1.yml
+
+apiVersion: v1                  # Kubernetes API version
+kind: Pod                       # This resource is a Pod
+metadata:
+  name: mytestpod                 # Pod name
+  annotations:
+    description: I am abu Naiim  # Optional description
+  labels:
+    app: mytestpod                # Label to identify the app
+
+spec:
+  containers:
+    - name: ubuntu-container     # First container name
+      image: ubuntu              # Image to use for the container
+      command: ["/bin/bash", "-c", "while true; do echo Hello-Naiim; sleep 5; done"]  # Command to run continuously
+      env:
+        - name: MY_NAME
+          value: "Abu Naiim"    # Environment variable inside container
+      ports:
+        - containerPort: 8080   # Port exposed by this container
+
+    - name: httpd-container      # Second container name
+      image: httpd               # Apache HTTPD image
+      command: ["/bin/bash", "-c", "while true; do echo Apache httpd; sleep 5; done"]  # Keep container running
+      env:
+        - name: MY_NAME
+          value: "Abu Naiim"    # Environment variable inside container
+      ports:
+        - containerPort: 80     # Port exposed by HTTPD container
+
+  restartPolicy: Never           # Pod will not restart if container exits

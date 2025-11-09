@@ -1,0 +1,123 @@
+
+### 🔹 Step 1: Host side এ log ফোল্ডার বানাও
+mkdir -p /root/logs
+
+
+---
+
+### 🔹 Step 2: Tomcat Container Run Command (Fixed Version ✅)
+
+podman run -d --name tomcat-3 \
+  --network mynet \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -p 8443:8443 \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  docker-reg.oss.net.bd/tomcat.8.0.53:v1 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+or
+
+podman run -d --name tomcat8 \
+  --network mynet \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c "/opt/tomcat/bin/catalina.sh start && tail -f /opt/tomcat/logs/catalina.out"
+
+or
+
+podman run -d --name tomcat-https \
+  --network mynet \
+  -p 8444:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '(/opt/tomcat/bin/catalina.sh run >> /opt/tomcat/logs/catalina.out 2>&1 &) && tail -f /opt/tomcat/logs/catalina.out | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+
+  যদি তুমি সব ERROR / SEVERE একসাথে ধরতে চাও:
+  /opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE" > /opt/tomcat/logs/stderr.log
+  আরও advanced ভাবে:
+  /opt/tomcat/bin/catalina.sh run > >(tee /opt/tomcat/logs/stdout.log) 2> >(tee /opt/tomcat/logs/stderr.log >&2)
+
+---
+### 🧠 ব্যাখ্যা
+* `>` → শুধু normal output (`stdout`)
+* `2>` → শুধু error output (`stderr`)
+* `exec` → নিশ্চিত করে যে `/bin/sh` নিজেই Tomcat process এর PID 1 নেয় (না হলে signal/stop ঠিকমতো কাজ করবে না)
+
+---
+
+### 🔹 Step 3: Container এর ভেতরে লগ চেক করো
+podman exec -it tomcat-https sh
+cd /opt/tomcat/logs/
+ls
+
+
+তুমি দেখতে পাবে:
+stdout.log
+stderr.log
+catalina.out
+localhost_access_log.*
+
+তারপর real-time লগ দেখো:
+tail -f stdout.log
+
+বা error গুলো দেখতে:
+tail -f stderr.log
+
+---
+
+### 🔹 Step 4: systemd সার্ভিস (যদি container টা সার্ভিস হিসেবে চালাতে চাও) on host machine
+sudo vi /etc/systemd/system/tomcat.service
+
+[Unit]
+Description=Tomcat Podman Container
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a tomcat-https
+ExecStop=/usr/bin/podman stop -t 10 tomcat-https
+
+[Install]
+WantedBy=multi-user.target
+
+
+তারপর রিলোড করো:
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable --now tomcat
+
+
+---
+podman exec -it tomcat-https sh
+cd logs
+tail -f stdout.log
+tail -f stderr.log
+
+
+### ✅ Final Result
+
+এখন তোমার লগগুলো আলাদা হয়ে যাবে:
+
+| লগ টাইপ           | লোকেশন                        |
+| ----------------- | ----------------------------- |
+| Normal Output     | `/opt/tomcat/logs/stdout.log` |
+| Error / Exception | `/opt/tomcat/logs/stderr.log` |
+| Host Mirror       | `/root/logs/`                 |
+
+ERROR → কোনো বড় সমস্যা হয়েছে, যা application ঠিকভাবে কাজ করতে বাধা দিতে পারে।
+SEVERE → জাভার logging-এ সবচেয়ে গুরুতর সমস্যা। সাধারণত system crash বা major failure নির্দেশ করে।
+WARNING → সতর্কবার্তা, কিছু ঠিকমতো হচ্ছে না, কিন্তু program চলতে পারে।
+FATAL → সবচেয়ে বড় critical error, system/সার্ভার বন্ধ হয়ে যেতে পারে।
+EXCEPTION → Java বা app-এ exception হয়েছে, কোনো unexpected condition ঘটেছে।
+FAIL → কোনো process বা operation ব্যর্থ হয়েছে।
+
+
+
+

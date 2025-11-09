@@ -1,0 +1,15 @@
+🔹 Labels commands (filtering):
+kubectl label pods testpod myname=Rayhan            # label add
+kubectl get pods --show-labels
+
+kubectl get pod -l owner=naiim                      # list get pods matching a label
+kubectl get pod -l owner!=naiim                     # give a list, where naiim is not present
+
+kubectl delete pod -l owner!=naiim                  # delete pod using Labels
+
+
+🔹 Labels-Selector commands:
+kubectl get pods -l 'owner in (naiim,rayhan)'       # give me a pods, which has owner=naiim,rayhan
+kubectl get pods -l 'owner notin (naiim,rayhan)'    # give me a pods, which not has owner=naiim,rayhan
+kubectl get pods -l owner=naiim,myname=Rayhan
+kubectl delete pods -l 'owner in (naiim)'

@@ -1,0 +1,90 @@
+--------------- Docker with Linux for website ---------------
+Docker website: https://docs.docker.com/engine/install/rhel/
+
+1. Update & install Docker/Docker Compose
+# sudo dnf update -y
+
+Install using the rpm repository:
+# sudo dnf -y install dnf-plugins-core
+  sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
+
+Install Docker Engine:
+# sudo dnf install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+Start Docker Engine:
+# sudo systemctl enable --now docker
+
+Verify:
+# sudo docker run hello-world
+
+2. Check installation
+# docker --version
+  docker compose version
+
+3. Firewall পোর্ট খুলে দাও (8081, 8082, 8083)
+# sudo firewall-cmd --permanent --add-port=8081/tcp
+  sudo firewall-cmd --permanent --add-port=8082/tcp
+  sudo firewall-cmd --permanent --add-port=8083/tcp
+  sudo firewall-cmd --reload
+
+4. VM এ Docker project structure তৈরি করা
+# mkdir -p ~/docker-sites === root dir
+  cd ~/docker-sites
+  mkdir Naiim_Protfolio AgroBd React_Protfolio
+
+
+5. Windows থেকে VM এ ফাইল কপি করা (SCP)
+PowerShell থেকে (VM username = naiim, VM IP = 192.168.174.138):
+# scp -r C:\xampp\htdocs\DockerWeb\Naiim_Protfolio naiim@192.168.174.138:/home/naiim/docker-sites
+  scp -r C:\xampp\htdocs\DockerWeb\AgroBd naiim@192.168.174.138:/home/naiim/docker-sites
+  scp -r C:\xampp\htdocs\DockerWeb\React_Protfolio naiim@192.168.174.138:/home/naiim/docker-sites
+
+6. Dockerfile তৈরি করা (প্রতিটা সাইটের জন্য)
+site1/Dockerfile
+# vi Dockerfile
+
+7. docker-compose.yaml তৈরি করা
+~/docker-sites/docker-compose.yaml:
+# vi docker-compose.yaml 
+
+8. Docker containers চালানো
+# cd ~/docker-sites
+  docker compose up -d === যদি image আগে build করা থাকে, compose শুধু container রান করবে। যদি image না থাকে, তখনই build করবে।
+  docker compose up -d --build === --build মানে হলো docker compose up দেওয়ার সময় images আগে থেকে থাকলেও আবার build করো
+  
+Container and Images running, after that i also create web-3 (If need)
+# sudo docker compose up -d web-3
+
+9. ওয়েবসাইট ব্রাউজারে দেখা
+# http://192.168.174.138:8081/
+
+
+Database:
+----- Mysql -----
+Access databade:
+# sudo docker exec -it laravel-agrobd-db mysql -uuser_agrobd -p
+
+Windows থেকে VM-এ SQL ফাইল পাঠানো (SCP দিয়ে):
+# scp C:\Users\User\desktop\agrobd.sql naiim@192.168.174.138:/home/naiim/docker-sites/AgroBd
+
+Docker MySQL container এ SQL file import করা:
+VM-এ SSH দিয়ে ঢোকো:
+# ssh naiim@192.168.174.138
+
+তারপর MySQL container-এ SQL file import করো:
+# sudo docker cp ~/docker-sites/AgroBd/agrobd.sql laravel-agrobd-db:/agrobd.sql
+
+How to in docker container:
+# sudo docker exec -it laravel-agrobd-db bash
+  ls
+
+এখন container-এর মধ্যে ঢুকে import করো:
+# mysql -uuser_agrobd -p agrobd < /agrobd.sql
+
+Show:
+# sudo docker exec -it laravel-agrobd-db mysql -uuser_agrobd -p
+  USE agrobd;
+  SHOW TABLES;
+  
+  
+

@@ -1,0 +1,28 @@
+// Jenkinsfile template
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://your-repo.git'
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'docker build -t bida-moha-api ./bida-moha-api'
+                sh 'docker build -t bidaapi ./bidaapi'
+            }
+        }
+        stage('Push') {
+            steps {
+                sh 'docker push your-docker-repo/bida-moha-api:latest'
+                sh 'docker push your-docker-repo/bidaapi:latest'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'kubectl apply -f deploy.yaml'
+            }
+        }
+    }
+}

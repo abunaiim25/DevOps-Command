@@ -1,0 +1,28 @@
+Backup:
+podman cp tomcat-https:/opt/tomcat /home/naiim/tomcat-https-backup
+
+container to Image Commit:
+podman commit tomcat-https tomcat-https-backup
+
+Image to container run:
+podman run -d --name tomcat-https-restored \
+  -p 8443:8443 \
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  localhost/tomcat-https-backup \
+  /bin/sh -c "/opt/tomcat/bin/catalina.sh run >> /opt/tomcat/logs/stdout.log 2>> /opt/tomcat/logs/stderr.log"
+
+
+###--- Logs backup on Desktop:
+Desktop cmd:
+echo %cd%
+
+On host machine:
+podman cp tomcat-https:/opt/tomcat/logs C:\Users\User
+
+podman cp tomcat-https-restored:/opt/tomcat/logs C:\Users\User
+
+
+Vm Host to container:
+podman cp /etc/qms/qpe.war tomcat-3:/opt/tomcat/webapps

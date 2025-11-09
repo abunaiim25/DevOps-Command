@@ -1,0 +1,74 @@
+
+## 1️⃣ Host-এ data folder তৈরি
+mkdir -p /root/mysql-data
+
+* এই folder-এ সব DB data save হবে, যাতে container delete হলেও data safe থাকে।
+
+
+## 2️⃣ MySQL container run করা (detached mode)
+podman run -d \
+  --name mysql \
+  -e MYSQL_ROOT_PASSWORD=PbMZZgfNjLe \
+  -p 3306:3306 \
+  -v /root/mysql-data:/var/lib/mysql:Z \
+  docker.io/library/mysql:5.5
+
+**Explanation:*
+| Option                                 | কাজ                          |
+| -------------------------------------- | ---------------------------- |
+| `-d`                                   | background-এ run করবে        |
+| `--name test-mysql`                       | container name               |
+| `-e MYSQL_ROOT_PASSWORD=MyRootPass123` | root password set            |
+| `-p 3306:3306`                         | host:container port mapping  |
+| `-v /root/mysql-data:/var/lib/mysql:Z` | data persistent রাখবে host-এ |
+
+> ⚠️ SELinux active হলে `:Z` লাগে permission fix করতে।
+
+---
+
+## 3️⃣ Container status check করা
+podman ps
+* দেখবে container running কি না
+
+---
+
+## 4️⃣ Container logs দেখা
+podman logs -f test-mysql
+
+
+* DB start হয়েছে কিনা check করার জন্য
+---
+
+## 5️⃣ Container এর ভিতরে MySQL connect করা
+podman exec -it test-mysql mysql -uroot -p
+# তারপর password দাও: PbMZZgfNjLe
+
+
+* MySQL shell খুলবে।
+* এখানে database create, user create সব করতে পারবে।
+
+---
+
+## 6️⃣ Persistent behavior check
+
+1. Container stop:
+podman stop test-mysql
+
+
+2. Container delete:
+podman rm test-mysql
+
+
+3. নতুন container create আবার same volume দিয়ে:
+podman run -d \
+  --name mysql55 \
+  -e MYSQL_ROOT_PASSWORD=MyRootPass123 \
+  -p 3306:3306 \
+  -v /root/mysql-data:/var/lib/mysql:Z \
+  localhost/mysql:5.5
+
+* আগের database load হবে `/root/mysql-data` থেকে।
+
+---
+
+

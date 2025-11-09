@@ -1,0 +1,68 @@
+# ======================
+# Folder Structure Setup
+# ======================
+
+# Tree install
+sudo dnf install tree -y
+
+# Create role directory
+mkdir -p Playbook/roles/webserver/tasks
+tree
+
+# Enter into Playbook folder
+cd Playbook/
+tree
+
+# Create main playbook file
+touch master.yml
+
+# Create role task file
+touch roles/webserver/tasks/main.yml
+
+# Check structure
+tree
+# Output:
+# Playbook/
+# ├── master.yml
+# └── roles
+#     └── webserver
+#         └── tasks
+#             └── main.yml
+
+
+Inside Playbook:
+vi master.yml
+# ===========================
+# File: master.yml
+# Main Playbook (role call)
+# ===========================
+- hosts: all
+  remote_user: ansible     # Remote user for SSH
+  become: yes              # Run with sudo privilege
+  connection: ssh
+  roles:
+    - webserver            # Calling the "webserver" role
+
+
+Inside Playbook:
+vi roles/webserver/tasks/main.yml
+# ======================================
+# File: roles/webserver/tasks/main.yml
+# Task file for "webserver" role
+# ======================================
+- name: Install Apache HTTP server
+  dnf:
+    name: httpd            # Package name
+    state: latest          # Ensure the latest version is installed
+
+- name: Start and enable Apache service
+  service:
+    name: httpd
+    state: started         # Start service immediately
+    enabled: yes           # Enable service at boot
+
+
+# ======================
+# Run the playbook
+# ======================
+ansible-playbook master.yml

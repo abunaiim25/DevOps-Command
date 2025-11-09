@@ -1,0 +1,33 @@
+----- playbook:5 (tasks, condition)-----
+inside ansible
+# vi condition.yml  
+--- # My playbook for condition
+- hosts: demo
+  remote_user: ansible
+  become: yes
+  connection: ssh
+  
+  tasks:
+    - name: Install apache on Debian family
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install apache on RedHat family
+      ansible.builtin.dnf:
+        name: httpd
+        state: present
+      when: ansible_os_family == "RedHat"
+
+For execute:
+# ansible-playbook condition.yml
+
+
+----- Common Vault Commands -----
+# ansible-vault create vault.yml === Create a new encrypted playbook
+  ansible-vault edit vault.yml === Edit the encrypted playbook
+  ansible-vault rekey vault.yml === To change the Password
+  ansible-vault encrypt target.yml === To encrypt an existing playbook
+  ansible-vault decrypt target.yml === To decrypt an existing playbook
+

@@ -1,0 +1,66 @@
+Official: https://helm.sh/docs/intro/install/
+Medium: https://medium.com/@ravipatel.it/getting-started-with-helm-a-beginners-guide-edffd2b79c7c
+
+###--- Helm Setup:
+Installing Helm:
+curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+chmod 700 get_helm.sh
+./get_helm.sh
+
+Check:
+which helm
+helm version
+
+###--- Adding a Helm Repository:
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
+
+Basic Commands: (show before install)
+helm repo list                       # Show all Helm repositories currently configured
+helm repo remove stable              # Remove the 'stable' repo from your local Helm setup
+helm search repo jenkins             # Search for 'jenkins' charts in all added repos
+helm show values stable/tomcat       # Display default config values for 'tomcat' chart from 'stable' repo
+helm show chart stable/tomcat        # Show chart details (name, version, description, etc.) for 'tomcat' chart
+helm show all stable/tomcat          # Show everything — chart metadata, values, README, templates (full info dump)
+
+Cheart Create:
+helm create helloworld               # Create chart
+apt-get install tree
+tree helloworld
+cd helloworld
+vi values.yaml
+rm -rf helloworld                    # Remove chart
+
+# Install charts
+helm install testjenkins stable/jenkins         # Install Jenkins chart with release name 'testjenkins'
+helm install testtomcat stable/tomcat --version 0.4.0
+helm install --wait testtomcat2 stable/tomcat   # message after 20s      
+kubectl get all   (Get after Install)                           
+
+# Delete chart
+helm delete testtomcat                         # Delete the 'testjenkins' release from cluster
+kubectl get all                                
+
+helm list                                       # Show all installed Helm releases in the current namespace
+
+# Dry run (test install without actual execution)
+helm install --dry-run testchart stable/tomcat  # Simulate installation of 'stable/tomcat' as 'testchart'; 
+                                                # shows manifests and checks for errors, but doesn't create any resources
+
+Value change from chart:
+helm show values stable/tomcat
+helm install testchart2 stable/tomcat --set service.type=NodePort
+kubectl get all 
+helm get values testchart2
+helm get manifest testchart2
+helm status testchart2
+
+
+Helm history:
+helm history testchart2
+helm upgrade testchart2 stable/tomcat
+helm history testchart2
+
+Rollback: back to previous version
+helm rollback testchart2
+helm history testchart2

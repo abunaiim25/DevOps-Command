@@ -1,0 +1,77 @@
+--------------- Network Management ---------------
+
+Network = Interconnection between two or more networking devices is called network.     
+NIC = Network Interface Card (For network connection NIC need)
+
+We can manage network in 3 ways
+1. Graphically
+2. NMTUI - Network Manager Text-based User Interface
+3. NMCLI - Network Manager Command Line Interface
+
+Network Profiles - Netowrk Profiles store the network information like IP address, subnet mask, gateway dns etc.
+
+For linux:
+# ip address: 192.168.174.137/24
+network part = 192.168.174
+host = 137
+Subnet mask = /24 মানে 255.255.255.0
+DNS (Domain Name System): DNS মানে নামকে IP তে কনভার্ট করা। যখন google.com লেখা হয়, DNS সেটাকে একটা IP address-এ রূপান্তর করে (যেমন 142.250.190.14)
+
+
+----- NMCLI - Network Manager Command Line Interface -----
+ls /etc/NetworkManager/system-connections/ 
+
+# nmcli connection show === total connection show 
+# nmcli connection down ens160 === Connection down 
+# nmcli connection up ens160 === Connection up 	
+# nmcli device show === total device connected show 
+# nmcli device status === devices connected or not connected
+# nmcli general status == status show
+
+New network Connection:
+type con-name ifname autoconnect ipv4.address ipv4.gateway ipv4.dns
+# nmcli connection add type ethernet con-name MyOffice ifname ens160 ipv4.addresses 192.168.174.222/24 ipv4.gateway 192.168.174.1 ipv4.dns 8.8.8.8 +ipv4.dns 4.4.4.4 === created new network
+  nmcli connection show === all network show
+  nmcli connection up MyOffice === Connected MyOffice network 
+  nmcli connection show
+  ifconfig === check ip 
+
+Modify network:
+# nmcli connection modify MyOffice ipv4.addresses 192.168.174.230/24
+  nmcli connection down MyOffice === Connection down 
+  nmcli connection up MyOffice === Connection up 	
+  ifconfig === check ip
+  
+Deletet network:
+# nmcli connection delete Office
+  nmcli connection show === all network show
+  nmcli connection down ens160 === Connection down 
+  nmcli connection up ens160 === Connection up 	
+  
+Auto Connection Off:
+  ls /etc/NetworkManager/system-connections/
+# cat /etc/NetworkManager/system-connections/ens160.nmconnection === default autoconnection show
+# nmcli connection modify ens160 autoconnect no === autoconnect off
+  nmcli connection down ens160 === Connection down 
+  nmcli connection up ens160 === Connection up 
+  cat /etc/NetworkManager/system-connections/ens160.nmconnection
+  init 6 === restart  
+  
+Auto Connection ON:
+  nmcli connection show
+# nmcli connection modify ens160 autoconnect yes === ON
+  init 6 === restart  
+
+----- NMTUI - Network Manager Text-based User Interface -----
+Command:
+# nmcli connection show 
+# cd /etc/NetworkManager/system-connections/
+# cat ens160.nmconnection
+
+For network add:
+# nmtui === GUI ...manually Ofice change 
+# ls /etc/NetworkManager/system-connections/
+# cd /etc/NetworkManager/system-connections/
+# cat Office.nmconnection 
+# ifconfig                
+              

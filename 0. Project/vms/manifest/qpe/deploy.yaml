@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qpe
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qpe
+  template:
+    metadata:
+      labels:
+        app: qpe
+    spec:
+      containers:
+        - name: tomcat
+          image: mdnaiim/tomcat-based-img
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: qpe-data
+              mountPath: /opt/tomcat/webapps
+      volumes:
+        - name: qpe-data
+          persistentVolumeClaim:
+            claimName: qpe-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qpe-service
+  namespace: demo
+spec:
+  selector:
+    app: qpe
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qpe-ingress
+  namespace: demo
+  annotations:
+    konghq.com/protocols: "http,https"
+    konghq.com/strip-path: "false"
+spec:
+  ingressClassName: kong
+  rules:
+    - host: 
+      http:
+        paths:
+          - path: /qpe
+            pathType: Prefix
+            backend:
+              service:
+                name: qpe-service
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qpe-service
+                port:
+                  number: 8080

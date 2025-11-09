@@ -1,0 +1,36 @@
+vi init.yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: initcontainer
+spec:
+  initContainers:   # ai container er kaj ses hole, main container er kaj start hobe
+    - name: cl
+      image: centos
+      command:
+        - /bin/sh
+        - -c
+        - echo "LIKE AND SUBSCRIBE TECHNICAL GUFTGU" > /tmp/xchange/testfile; sleep 5
+      volumeMounts:
+        - name: xchange
+          mountPath: /tmp/xchange
+  containers:
+    - name: c2
+      image: centos
+      command:
+        - /bin/bash
+        - -c
+        - while true; do cat /tmp/data/testfile; sleep 5; done
+      volumeMounts:
+        - name: xchange
+          mountPath: /tmp/data
+  volumes:
+    - name: xchange
+      emptyDir: {}
+
+
+kubectl apply -f initcontainer.yaml
+watch kubectl get pods
+kubectl get pods
+kubectl logs -f initcontainer -c c2 

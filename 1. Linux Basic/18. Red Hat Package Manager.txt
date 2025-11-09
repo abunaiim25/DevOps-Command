@@ -1,0 +1,30 @@
+--------------- Package Management ---------------
+
+package a compressed archive file that contains the files required by a setup.
+          
+package management = a tool that is used to manage the packages
+1. Install
+2. Remove
+3. Update
+4. Upgrade
+
+RedHat, CentOS, Fedora or Oracle RPM, YUM, Dnf
+
+rpm = RedHat Package Manager
+yum = YellowDog Updator Modified
+dnf Dendified YUM
+
+RPM: oldest
+RPM does not check dependencies.
+1. Install a package using RPM
+rpm -i <package-name>
+2. Query Install check or not:
+rpm -q <package-name>
+3. Remove package:
+rpm -e <package-name>
+4. Import gpg key
+rpm --import <key-path>
+5. Upgrade a package
+rpm -U <package-name>
+6. install package with progess view
+rpm -ivh <package-name>

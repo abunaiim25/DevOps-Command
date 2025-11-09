@@ -1,0 +1,83 @@
+--------------- Configer ---------------
+
+mouse === ctrl + alt  
+New tab === ctrl + shift + n
+Close tab (terminal) === ctrl + shift + w 
+All tab === alt + tab 
+Close window === ctrl + shift + q
+Exit page === q
+use for shortcut name === alise 
+
+[root@localhost ~]# === Root user
+[naiim@localhost ~]$ === Normal user
+
+###--- IP address change:
+sudo vi /etc/netplan/01-netcfg.yaml
+network:
+  version: 2
+  ethernets:
+    ens33:
+      dhcp4: no
+      addresses:
+        - 192.168.174.151/24
+      routes:
+        - to: default
+          via: 192.168.174.2
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+
+sudo chmod 600 /etc/netplan/01-netcfg.yaml
+sudo netplan apply
+ip addr show ens33
+ping 8.8.8.8
+
+
+Root directories explained:
+/afs → Advanced File System, বিশেষ কোনো networked filesystem জন্য (সব Linux এ থাকে না)
+/boot → OS boot করার জন্য kernel আর bootloader এর files (e.g., vmlinuz, initrd.img)
+/dev → Device files (disk, USB, terminals) থাকে এখানে, যেমন /dev/sda1
+/home → Users এর personal data, যেমন /home/naiim
+/lib → Core shared libraries, system programs run করতে লাগে
+/lib64 → 64-bit system libraries (যদি system 64-bit হয়)
+/mnt → Temporary mount points, যেমন external drive mount করার জন্য
+/opt → Optional programs/packages install করার জন্য
+/root → root user এর home directory
+/sbin → System binaries, admin tasks এর programs (ifconfig, fsck)
+/sys → Kernel interface, hardware info এবং system config expose করে
+/usr → User programs, applications, libraries, documentation (non-essential for boot)
+/bin → Essential command binaries, যেমন ls, cp, cat
+/etc → System configuration files
+/media → Removable media mount point (CD, USB)
+/proc → Virtual filesystem, running processes এবং kernel info show করে
+/run → Runtime data, PID files, sockets ইত্যাদি
+/srv → Services data, e.g., web server data (/srv/www)
+/tmp → Temporary files, সব user/program ব্যবহার করতে পারে
+/var → Variable data, যেমন logs, databases, mail spools
+সহজভাবে:
+/bin, /sbin, /lib = boot এবং system commands
+/etc = configuration
+/home = user data
+/var = logs, cache, runtime data
+/mnt & /media = temporary mounts
+/usr & /opt = applications
+
+
+মূলত user account policies define করার জন্য ব্যবহৃত হয়।
+যেমন: password expiration, minimum/maximum password length, UID/GID range, default home directory location
+/etc/login.defs হলো system config file:
+vi /etc/login.defs
+# [rayhan ALL=(ALL) ALL]] === i (Keyboard)
+# :wq! === Esc(Keyboard) 
+
+কোন normal user (যেমন rayhan) root কমান্ড চালাতে পারে:
+If not have password permission: (Permission by root user)
+# cat /etc/sudoers (Not edit from this)
+# visudo === Add Permission
+# [rayhan ALL=(ALL) ALL]] === i (Keyboard)
+# :wq! === Esc(Keyboard) 
+
+Version Check
+# cat /usr/lib/os-release 
+
+
+

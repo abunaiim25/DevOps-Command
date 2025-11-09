@@ -1,0 +1,95 @@
+
+## **Prerequisites for Both Nodes**
+
+sudo su
+apt update -y
+apt install -y curl wget apt-transport-https ca-certificates gnupg
+
+
+
+## **A. Master / Controller Node**
+
+### 1️⃣ Install k0s
+
+
+sudo su
+curl -sSLf https://get.k0s.sh | sh
+# add k0s to PATH permanently
+echo "export PATH=\$PATH:/usr/local/bin" | tee -a /etc/profile
+source /etc/profile
+
+
+### 2️⃣ Start Controller + Worker (optional if single-node)
+
+k0s install controller --enable-worker
+systemctl start k0scontroller
+systemctl enable k0scontroller
+systemctl status k0scontroller
+
+Check the cluster status:
+k0s kubectl get pods --all-namespaces
+k0s kubectl get nodes -o wide
+
+-----------------------------------------------------
+### 3️⃣ Create a token for Worker nodes
+k0s token create --role=worker
+
+> This will print a long token string or you can use `--output-file /root/worker.token` to save it.
+
+
+## **B. Worker Node**
+
+### 1️⃣ Install k0s on worker
+sudo su
+curl -sSLf https://get.k0s.sh | sh
+which k0s
+k0s version
+
+
+### 2️⃣ Join Worker to cluster
+Use the token generated on the master:
+sudo k0s worker "PASTE_WORKER_TOKEN_HERE" &
+
+Check nodes from master:
+k0s kubectl get nodes -o wide
+
+
+## **C. Optional: Add another Controller**
+Master:
+sudo su
+k0s token create --role=controller
+
+Worker:
+curl -sSLf https://get.k0s.sh | sudo sh
+k0s controller "master token"
+-----------------------------------------------------
+
+## Connect Remotly:
+On the Master Node:
+sudo cp /var/lib/k0s/pki/admin.conf /home/naiim/k0s.conf
+sudo chown naiim:naiim /home/naiim/k0s.conf
+From Your Local PC/Worker:
+scp root@<master-ip>:/home/naiim/k0s.conf .
+scp root@192.168.174.160:/home/naiim/k0s.conf .
+
+# K0S alias to kubectl:
+echo "alias kubectl='k0s kubectl'" >> ~/.bashrc
+source ~/.bashrc
+#
+export KUBECONFIG=/var/lib/k0s/pki/admin.conf
+
+
+For single node, if need:
+if face this  Warning  FailedScheduling  2m34s  default-scheduler  0/1 nodes are available: 1 node(s) had untolerated taint {node-role.kubernetes.io/control-plane: }.
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+
+
+IF kube problem:
+kubectl delete ds kube-router -n kube-system
+kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml
+
+
+
+
+
+

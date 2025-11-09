@@ -1,0 +1,24 @@
+// JenkinsfileAPI template
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://your-repo.git'
+            }
+        }
+        stage('Build & Push') {
+            steps {
+                sh 'docker build -t bidaapi ./bidaapi'
+                sh 'docker push your-docker-repo/bidaapi:latest'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'kubectl apply -f bidaapi/deployment.yaml'
+                sh 'kubectl apply -f bidaapi/service.yaml'
+                sh 'kubectl apply -f bidaapi/ingress.yaml'
+            }
+        }
+    }
+}

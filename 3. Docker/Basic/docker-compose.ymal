@@ -1,0 +1,71 @@
+services:
+  # --------------- Web 1 (Html) ---------------
+  # Web 1
+  web-1:
+    #image: docker-web-html
+    build: ./Naiim_Protfolio
+    container_name: naiim-protfolio-web-1
+    ports:
+      - "8081:80"
+    networks:
+      - web-network
+	  
+  # --------------- Web 2 (Laravel) ---------------
+  web-2:
+    #image: docker-web-laravel 
+    build: ./AgroBd
+    container_name: laravel-agrobd-web-2
+    volumes:
+      - ./AgroBd:/var/www/html
+    ports:
+      - "8082:80"
+    depends_on:
+      - agrobd-db
+    networks:
+      - web-network
+	command: >
+      sh -c "chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+            && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+            && apache2-foreground"
+			
+  # --------------- Web 3 (React + Nginx) ---------------
+  web-3:
+    #image: docker-web-react
+    build: ./React_Protfolio
+    container_name: react-protfolio-web-3
+    volumes:
+    - ./React_Protfolio:/var/www/html
+    - /var/www/html/node_modules
+    ports:
+      - "8083:80"
+    networks:
+      - web-network
+	  
+	  
+  # --------------- Database ---------------
+  agrobd-db:
+    image: mysql
+    container_name: laravel-agrobd-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: agrobd
+      MYSQL_USER: user_agrobd
+      MYSQL_PASSWORD: 12345
+      MYSQL_ROOT_PASSWORD: 12345
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - web-network
+	  
+	  
+networks:
+  web-network:
+    driver: bridge
+
+volumes:
+  db_data:
+
+
+

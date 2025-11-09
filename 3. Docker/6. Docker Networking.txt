@@ -1,0 +1,36 @@
+----- Bridge network -----
+Bridge Network is default network:
+Login Container:
+# docker run -d --name login nginx:latest
+  docker inspect login === ("IPAddress": "172.17.0.2")
+  docker exec -it login /bin/bash
+  apt update
+  apt-get install iputils-ping -y
+  ping -V
+
+Logout Container:
+# docker run -d --name logout nginx:latest
+  docker inspect logout === ("IPAddress": "172.17.0.3")
+  docker exec -it logout /bin/bash
+
+Inside Login Container:
+Default access one container to another container which are one the same host
+# ping 172.17.0.3 === working (connected with logout)
+# docker network ls
+
+
+----- Custome network -----
+New network create and communication between containers:
+# docker network create secure-network === custome bridge network
+  docker network ls
+  
+# docker run -d --name finance --network secure-network nginx:latest
+  docker inspect finance === "secure-network", "IPAddress": "172.18.0.2",
+
+Inside Login Container:
+# ping 172.18.0.2 === Here, Not reach the finance container, not working (no connected with finance)
+
+
+----- Host network -----
+# docker run -d --name host-demo --network=host nginx:latest
+  docker inspect host-demo === "IPAddress": "" (Host address directly)

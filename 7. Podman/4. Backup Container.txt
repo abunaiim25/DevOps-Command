@@ -1,0 +1,59 @@
+Ah, gotcha 😎 — তুমি basically **container এর ভিতরের data ব্যাকআপ করতে চাও before deleting the container**। Podman/Docker এ এটা করতে কয়েকটা সহজ উপায় আছে।
+
+---
+
+### **1️⃣ Copy files from container to host**
+
+Podman/Docker-এ `cp` command ব্যবহার করে container থেকে host machine-এ data বের করা যায়।
+
+```bash
+podman cp tomcat-https-2:/opt/tomcat /home/naiim/tomcat-https-backup
+```
+
+Explanation:
+* `tomcat-https-2` → container name
+* `/opt/tomcat` → container-এর directory যা তুমি backup করতে চাও
+* `/home/naiim/tomcat-backup` → host machine-এর path
+
+এতে পুরো tomcat folder host machine-এ copy হয়ে যাবে।
+
+---
+
+### **2️⃣ Create a container image from current container**
+
+Container-এর state save করতে পারো একটা image হিসেবে। পরবর্তীতে চাইলে আবার run করা যাবে।
+
+```bash
+podman commit tomcat-https-2 tomcat-https-backup
+```
+
+* `tomcat-https-backup` → নতুন image name
+* পরবর্তীতে `podman run -it tomcat-https-backup` দিয়ে এই container recreate করা যাবে
+example:
+podman run -d --name tomcat-https-2 -p 8443:8443 \
+  -v /home/naiim/tomcat-data:/opt/tomcat \
+  tomcat-https-backup
+
+---
+
+### **3️⃣ Volume use করলে**
+
+যদি container run করার সময় tomcat directory host volume-এর সাথে mount করা হয়ে থাকে (recommended practice), তাহলে data automatic host machine-এ থাকে।
+Example run:
+
+```bash image ta registry te thakte hobe
+podman run -d --name tomcat-https-2 \
+  -v /home/naiim/tomcat-data:/opt/tomcat \
+  tomcat:latest
+```
+
+এভাবে `/opt/tomcat` container-এ change automatically `/home/naiim/tomcat-data` host machine-এ save হয়।
+
+---
+
+💡 **Tip:** Container delete করার আগে always `podman stop` করে তারপর backup করো।
+
+---
+
+যদি চাও, আমি একটা **step-by-step backup & restore guide** বানিয়ে দিতে পারি Podman container এর জন্য।
+চাই কি?

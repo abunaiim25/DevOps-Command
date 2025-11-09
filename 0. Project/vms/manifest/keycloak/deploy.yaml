@@ -1,0 +1,169 @@
+# =========================
+# Keycloak Themes PV + PVC
+# =========================
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: keycloak-theme-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual-1
+  hostPath:
+    path: /mnt/data/keycloak/themes
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-theme-pvc
+  namespace: keycloak
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: manual-1
+
+# =========================
+# Keycloak Providers PV + PVC
+# =========================
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: keycloak-provider-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: manual-2
+  hostPath:
+    path: /mnt/data/keycloak/providers
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: keycloak-provider-pvc
+  namespace: keycloak
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: manual-2
+
+# =========================
+# Keycloak Deployment
+# =========================
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:22.0.1
+          args: ["start-dev"]
+          ports:
+            - containerPort: 8080
+          env:
+            # Admin credentials
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "12345"
+
+            # DB configuration
+            - name: KC_DB
+              value: "mariadb"
+            - name: KC_DB_URL
+              value: "jdbc:mariadb://180.94.20.17:3306/keycloak"
+            - name: KC_DB_USERNAME
+              value: "naiim"
+            - name: KC_DB_PASSWORD
+              value: "12345"
+            - name: KC_DB_SCHEMA_UPDATE
+              value: "true"
+
+            # Hostname + path
+            - name: KC_HOSTNAME
+              value: "180.94.20.17:31067"
+            - name: KC_HOSTNAME_PATH
+              value: "/idp"
+            - name: KC_HOSTNAME_ADMIN
+              value: "180.94.20.17:31067/idp"
+            - name: KC_PROXY
+              value: "edge"
+
+          volumeMounts:
+            - name: keycloak-theme-pv
+              mountPath: /opt/keycloak/themes
+            - name: keycloak-provider-pv
+              mountPath: /opt/keycloak/providers
+
+      volumes:
+        - name: keycloak-theme-pv
+          persistentVolumeClaim:
+            claimName: keycloak-theme-pvc
+        - name: keycloak-provider-pv
+          persistentVolumeClaim:
+            claimName: keycloak-provider-pvc
+
+# =========================
+# Keycloak Service
+# =========================
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  type: ClusterIP
+  selector:
+    app: keycloak
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+
+# =========================
+# Keycloak Ingress (Kong) HTTP + /idp
+# =========================
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak-ingress
+  namespace: keycloak
+  annotations:
+    konghq.com/protocols: "http"
+    konghq.com/strip-path: "true"  # remove /idp before forwarding
+spec:
+  ingressClassName: kong
+  rules:
+    - http:
+        paths:
+          - path: /idp
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

@@ -1,0 +1,92 @@
+--------------- Linux Basic Commends ---------------
+[root@localhost ~]# === Root user
+[naiim@localhost ~]$ === Normal user / Standard user
+
+# ip a === IP address
+# hostname === Found hostname
+# whoami === Login user
+# pwd === Present working directory 
+# man ls
+# whereis ls === Where is located
+# man whatis 
+
+# ll === Display directory contents (list)
+# ls === Display directory contents (list)
+# ls -l === Display directory contents with extra details for permissions, owner, group(long list)
+# ls -a === Display directory contents with hidden file (list all)
+# ls -Z === Security admin
+# ls home/ === Have anything file on home? 
+# ls --help
+
+# cd === Go to login location
+# cd name === Forword one step
+# cd name/name === Forword two step
+# cd .. === Backword one step
+# cd ../.. === Backword two step
+# cd ../../media === Backword two step & Forword one step
+# cd - === Go previous location
+
+# echo Today  is good day === Print
+# touch mytest === create file
+# echo Today  is friday > mytest === Text write on mytest file / Or overwrite data
+# cat mytest === Open file
+# echo I am naiim >> mytest === Add new text on mytest file
+# echo -e "apple\nred\norange\nbanana" >> testfile
+# touch - myfile textfile amnifile === 3 text file created
+# rm -f myfile textfile === Remove 2 file
+# touch file{10..15} === Multiple file created
+# touch Ban/Dhaka/File{1..5} === Created file on folder
+# rm -f Ban/Dhaka/File{1..3} === Removed file on folder
+# rm -rf Ban/ === Removed all on Ban 
+
+# head file1 === Top data show (like cat)
+# head -n 2 file1 === Top 2 line file data show 
+# tail file1 === Bottom data show (like cat)
+# tail -n 2 file1 === Bottom 2 line file data show 
+# sort mytest === Data sort (asc)
+# sort -r mytest === Data reverse (desc)
+# grep "P" mytest === Find out all P
+# grep "P" mytest | grep "Po" === Find out all P and PO
+# less mytest === For many text 
+# more mytest === For many text (%)
+
+# mkdir my_folder === Folder create
+# mkdir folder1 folder2 folder3 === Multiple folder create
+# mkdir folder{1..5} === Folder create 1 to 5
+# rmdir folder{1..3} === Remove folder
+# mkdir -p Ban/Dhaka/Ami === Path wais folder 
+# tree Ban/
+
+# cp amnifile amnifile3 === Copy amnifile & created amnifile3
+# cp amnifile my_folder === amnifile copy on my_folder folder
+# ls my_folder/
+# cp amnifile my_folder/amnifile3 === Copy amnifile on my_folder folder as a amnifile3
+
+# mv amnifile2 my_folder === amnifile2 move to my_folder (cut)
+# mv amnifile2 my_folder/new_amnifile2 === amnifile2 move to my_folder as a new_amnifile2(cut)
+# mv my_folder/amnifile my_folder/rename_amnifile === Rename folder name
+# mv test / === Move test file on home
+
+# history === All previous history command
+# history -c === All previous history command clear
+# clear === Terminal clear 
+
+# date === Current date & time
+# cal === calander
+# cal -3 === 3 months calander
+# cal 2023
+# cal --help
+
+wc file.txt
+wc -l file.txt → শুধু lines count করবে
+wc -w file.txt → শুধু words count করবে
+wc -c file.txt → শুধু bytes (characters) count করবে
+wc -m file.txt → শুধু characters count করবে (multi-byte aware)
+wc -L file.txt → longest line এর length দেখাবে
+
+# lscpu === Porcessor information show
+# lshw === Hardware information show
+# lsmem === Memory information show
+# cat /etc/shadow === password related
+# df
+# lsblk

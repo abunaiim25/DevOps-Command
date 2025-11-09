@@ -1,0 +1,32 @@
+--------------- Apache ---------------
+
+1. Install Apache (httpd):
+# sudo yum install httpd -y === Install Apache
+
+# sudo systemctl start httpd === Start Apache immediately
+  sudo systemctl enable httpd === Enable it to start on boot
+  sudo systemctl status httpd === Check status
+
+2. Firewall adjustments:
+Allow HTTP & HTTPS traffic
+# sudo firewall-cmd --permanent --add-service=http
+  sudo firewall-cmd --permanent --add-service=https
+  sudo firewall-cmd --reload
+
+3. Create a test page:
+# cd /var/www/html === Default web root for Apache
+# sudo vi index.html === Create a test page
+  <h1>Hello from Apache</h1>
+
+# sudo systemctl restart httpd === Restart Apache to load changes
+
+
+4. Change Apache port:
+# sudo vi /etc/httpd/conf/httpd.conf === Edit config
+  Find: Listen 80
+  Change to:Listen 8080
+
+# sudo firewall-cmd --permanent --add-port=8080/tcp === firewall port
+  sudo firewall-cmd --reload
+
+# sudo systemctl restart httpd === Restart Apache

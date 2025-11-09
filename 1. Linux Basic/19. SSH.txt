@@ -1,0 +1,106 @@
+--------------- SSH - Secure Shell---------------
+                  
+Secure Shell to take remote access of the shell of a system.
+
+----- Access through IP -----
+ssh <username>@<IP-address> === যেই কম্পিউটারে ঢুকতে চাইছো, তার IP address হলো 192.168.174.139
+ssh root@192.168.174.139
+
+Permission:
+# cp /etc/ssh/sshd_config /opt/
+# vi /etc/ssh/sshd_config === PermitRootLogin yes
+# systemctl restart sshd
+
+Client Computer:
+# ssh root@192.168.174.134
+ ifconfig
+
+
+----- Access through hostname -----
+# cat /etc/hosts
+# vi /etc/hosts  
+  192.168.174.134  RHEL  === add hostname, if not have
+# ping RHEL
+
+ssh <username>@<hostname>
+ssh root@RHEL
+
+Permission:
+# cp /etc/ssh/sshd_config /opt/ === copy before change
+# vi /etc/ssh/sshd_config === PermitRootLogin yes
+# systemctl restart sshd
+
+Client Computer:
+# ssh root@RHEL
+
+
+----- Access without password / SSH key pair ----- 
+SSH key pair = public key + private key. 
+এই key দিয়ে তুই password ছাড়া secure login করতে পারবি remote server এ। 
+
+Private key → এইটা কম্পিউটারে থাকে, কেউ দেখবে না
+Public key → এটা remote server এ দেয়ার জন্য, server এটাকে চেনে এবং private key match করলে login দেয়
+/root/.ssh/id_rsa (private key)
+/root/.ssh/id_rsa.pub (public key)
+
+Permission:
+# cp /etc/ssh/sshd_config /opt/ === copy before change
+# vi /etc/ssh/sshd_config === PermitRootLogin yes
+# systemctl restart sshd
+
+# mkdir -p /root/.ssh
+# chmod 700 /root/.ssh
+
+# ssh-keygen -t rsa -b 3072 -f /root/.ssh/id_rsa === key genarate
+  ls -l /root/.ssh/
+  cat /root/.ssh/id_rsa.pub
+# ssh-copy-id root@192.168.174.134
+# chmod 700 ~/.ssh
+# chmod 600 ~/.ssh/authorized_keys
+Remote server:
+# ssh root@192.168.174.134
+
+Another way: 
+# ssh-keygen -t rsa -b 4096 === key genarate
+# scp /root/.ssh/id_rsa.pub root@192.168.174.139:/root/
+Remote server:
+# ssh root@192.168.174.139
+
+
+----- Forward Port - Change Service Port Number -----
+Step 1: SSH Config ফাইল এডিট
+# cp /etc/ssh/sshd_config /opt/ === copy before change
+# vi /etc/ssh/sshd_config === Port 3000 [port change, becouse default port not secure]
+# semanage port -a -t ssh_port_t -p tcp 3000
+
+Step 2: Firewall এ নতুন পোর্ট Allow কর
+# firewall-cmd --permanent --add-port=3000/tcp
+# firewall-cmd --reload
+
+Step 3: SSH Service Restart
+# systemctl restart sshd
+
+Remote server:
+# ssh -p 3000 root@192.168.174.139 === with port number
+
+
+----- My Orginal Port Number not share to others-----
+# vi /etc/ssh/sshd_config === #Port 22
+# semanage port -a -t ssh_port_t -p tcp 3000
+# systemctl restart sshd
+
+Step 2: Firewall Forward Port Add
+# firewall-cmd --permanent --add-forward-port=port=3000:proto=tcp:toport=22
+# firewall-cmd --reload
+# firewall-cmd --list-all
+
+Step 3: Masquerade Enable
+# firewall-cmd --zone=public --add-masquerade --permanent
+# firewall-cmd --reload
+
+Step 4: Check SSHD
+systemctl status sshd
+ss -tlnp | grep sshd
+
+Step 5: Remote Connect
+ssh -p 3000 root@192.168.174.139

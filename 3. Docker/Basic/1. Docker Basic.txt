@@ -1,0 +1,201 @@
+Github: https://github.com/codingwithcodeabc/Ultimate-Docker-and-Docker-Compose-Course
+
+----- Docker Images -----
+# docker pull node/ubuntu === Pull image
+# docker images === All images
+
+Remove Images:
+# docker rmi javascript_app:v1 / docker rmi ubuntu
+  docker ps -a
+
+Remove unused images:
+# docker image prune -a
+
+
+----- Docker Container -----
+# docker ps === All Running container
+# docker ps -a === All container
+
+Create Container:
+# docker run node === Run container & Exit
+# docker run -it node/ubuntu === Interactive terminal & Run container and continue
+# docker run -p 5004:5001 --name node_app_container node_app === with container name 
+
+Start & Stop Container:
+# docker container stop 2d271df3e7e9 / stoic_brown === Container stop (id or name)
+# docker container start 2d271df3e7e9 / stoic_brown === Container start (id or name)
+
+Remove Container:
+# docker container rm 4840029e9c0e / priceless_tharp
+  docker ps -a
+  
+When I run this command, Stop container to remove container:
+# docker run -p 5004:5001 --rm node_app
+  docker container stop 19d5e5a0baaa
+  
+Remove all stoped containers:
+# docker container prune
+
+
+----- Dockerize Javascript Application -----
+Simple Javascript:
+# node app
+  node -v
+
+Dockerizetion:
+# Create Docker Image: Dockerfile
+  FROM node:22
+  WORKDIR /app
+  COPY . .
+  CMD ["node", "app.js"]
+
+FROM node:22  === Node.js এর অফিসিয়াল ইমেজ (ভার্সন 22) বেস হিসেবে নিচ্ছি
+WORKDIR /app  === কন্টেইনারের ভেতরে কাজ করার ডিরেক্টরি সেট করো /app এ
+COPY . .  === (. = Host Machine) হোস্টের (তোমার কম্পিউটার) সব ফাইল কপি করে দাও (. = Container Machine) কন্টেইনারের /app ফোল্ডারে
+CMD ["node", "app.js"]  === কন্টেইনার স্টার্ট হলে 'node app.js' রান করবে
+
+Build Image:
+PS D:\Docker Project\dockerize_javascript>
+# docker build . === Image create
+  or
+  docker build -t javascript_app:v1 . === Image create with repository & tag v1
+  or
+  docker build -t javascript_app . === Image create with repository & tag latest
+  
+  docker images 
+  docker run f018d02e3233/javascript_app:v1 === Container run
+  docker ps -a
+  
+# docker build --help
+# docker run --help
+
+
+----- Dockerize Node Application -----
+Simple Application:
+# npm init -y
+  npm install express
+  node app
+# add on package.json
+"scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+     "dev": "nodemon app.js"
+  },
+
+Dockerizetion:
+# Create Docker Image: Dockerfile(Optimize)
+FROM node
+WORKDIR /app
+RUN npm install -g nodemon
+COPY package.json .
+RUN npm install
+COPY . .
+EXPOSE 5001
+CMD ["npm", "run", "dev"]
+
+PS D:\Docker Project\dockerize_node_application>
+# docker build -t node_app . / docker build -t node_app:v1 .
+  docker images 
+  
+  docker run -p 5001:5001 node_app === Container run
+  or
+  docker run -p 5001:5001 node_app:v1 === with version
+  or
+  docker run -p 5001:5001 --name node_app_container node_app === with container name
+  
+  docker ps 
+For another port:
+# docker run -p 5002:5001 node_app === app run on port 5002
+
+
+----- Docker Volumes and Bind Mount implement ----
+-v "/host_path:/container_path"
+-v "/app/node_modules" === anonymous volumes
+
+# docker run -p 5001:5001 --name my_node1 -v "D:\Docker Project\dockerize_node_application:/app" -v "/app/node_modules" node_app
+or
+# docker run -p 5004:5001 --name my_node1 -v "${PWD}:/app" -v "${PWD}/node_modules:/app/node_modules" node_app
+
+
+----- Dockerize React Application -----
+Simple Application:
+# npm create vite@latest
+# add this code on vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: true,
+    port: 5173,
+    watch: {
+      usePolling: true,  // critical for Windows volumes
+      interval: 100,     // optional, faster detection
+    }
+  }
+})
+
+Dockerizetion:
+# Create Docker Image: Dockerfile
+FROM node:22
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+
+PS D:\Docker Project\dockerize_react_application> 
+# docker build -t react_app .
+  docker images 
+  docker run -p 5173:5173 --name react_app_container react_app
+  or (with volume)
+  docker run -p 5173:5173 --name my_react_c -v "${PWD}:/app" -v /app/node_modules react_app
+
+  docker run -p 5001:5001 --name my_node1 -v "${PWD}:/app" -v /app/node_modules node_app
+
+
+----- Docker Compose (Use for multi container) -----
+When we work on multiple services like: dockerize_node_application & dockerize_react_application
+
+Dockerizetion:
+docker-compose.yaml
+(Code)
+
+PS D:\Docker Project>
+# docker compose build === এতে Dockerfile পড়ে নতুন ইমেজ বানাবে।
+
+# docker compose up -d web-2 === Specific node_container start
+# docker-compose up === node_container start
+# docker-compose down === node_container stop
+
+
+Network Create & Remove:
+# docker network --help
+  docker network ls
+  
+  docker network create my-network
+  docker network rm my-network
+  docker network ls
+  
+  
+----- Mysql -----
+Access databade:
+# docker exec -it laravel-agrobd-db mysql -uuser_agrobd -p
+
+import agrobd.sql:
+# docker cp "C:\Users\User\desktop\agrobd.sql" laravel-agrobd-db:/agrobd.sql
+
+Show:
+# docker exec -it laravel-agrobd-db mysql -uuser_agrobd -p
+  USE agrobd;
+  SHOW TABLES;
+
+
+project-root/
+ ├── laravel/   (Laravel app)
+ │    └── Dockerfile
+ ├── react/     (React app)
+ │    └── Dockerfile
+ ├── node/      (Node app)
+ │    └── Dockerfile
+ └── docker-compose.yml

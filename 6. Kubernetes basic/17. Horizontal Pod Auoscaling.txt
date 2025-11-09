@@ -1,0 +1,88 @@
+###--- Metrics Server
+Website: https://medium.com/@mjkool/metrics-server-in-kubernetes-0ba52352ddcd
+
+D:\>kubectl top pod my-redis
+error: Metrics API not available
+
+kubectl get apiservices
+
+It can be done with just one command:
+minikube addons enable metrics-server
+
+Install it in your cluster under kube-system namespace.
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl get apiservices
+
+To fix this, you need to edit the deployment for metrics-server using below command.
+D:\> kubectl edit deployment metrics-server -n kube-system
+
+Add an argument –kubelet-insecure-tls to existing args section
+containers:
+ - args:
+ - - cert-dir=/tmp
+ - - secure-port=4443
+ - - kubelet-insecure-tls
+
+Verify:
+kubectl get apiservices
+kubectl get namespaces
+kubectl get pods -n kube-system
+kubectl logs -f metrics-server-778476f6-lplc5 -n kube-system
+
+
+
+###--- Pod Autoscale
+vi deployment.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydeploy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: deployment
+  template:
+    metadata:
+      name: testpod8
+      labels:
+        name: deployment
+    spec:
+      containers:
+        - name: c00
+          image: httpd
+          ports:
+            - containerPort: 80
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 200m
+
+
+Commands:
+kubectl apply -f deployment.yaml
+kubectl get all
+kubectl get deployment,pods
+
+Autoscale:
+kubectl autoscale deployment mydeploy --cpu-percent=20 --min=1 --max=10
+kubectl get all
+
+Test:
+Go duplicate ip:
+kubectl get pods
+kubectl exec -it mydeploy-7fcf48785b-tr952 -- /bin/bash
+
+Go first ip:
+watch kubectl get all
+
+Same time see (duplicate ip) and (first ip) on screen:
+Go duplicate ip:
+apt update -y
+apt update -y
+apt update -y
+apt update -y
+
+after 5 minites cooldown to delete pods

@@ -1,0 +1,78 @@
+###--- Docker
+docker build -t demoimg .
+docker run --name demo-api-container demoimg
+docker commit demo-api-container demo-api
+docker images
+
+# Docker Hub -> Create Repository → demo-api
+# Account login on docker hub:
+docker login -u mdnaiim
+# Send docker hub:
+docker tag demo-api mdnaiim/demo-api 
+docker push mdnaiim/demo-api
+  
+
+###--- Cluster create:
+Median: Medium: https://hbayraktar.medium.com/how-to-install-kubernetes-cluster-on-ubuntu-22-04-step-by-step-guide-7dbf7e8f5f99
+Master, Worker-1, Worker-2
+
+
+###--- Master Node:
+# Git:
+sudo apt-get install tree
+https://github.com/LondheShubham153/microservices-k8s.git
+tree microservices-k8s
+cd microservices-k8s/flask-api/k8s
+ls
+
+
+###--- For App Api
+# App Deployment:
+vi taskmanager.yml 
+kubectl apply -f taskmanager.yml 
+kubectl get pods
+kubectl scale --replicas=2 deployment/taskmanager
+kubectl get pods
+
+Check on worker node:
+docker ps
+
+# App Server (Connect for outside like browser):
+vi taskmaster-svc.yml
+kubectl apply -f taskmaster-svc.yml
+kubectl get svc taskmaster-svc
+
+Check using worker node ip:
+worker-node-public-ip:30007
+
+
+###--- For App Database
+# Persistent Volume (PV) for stroge:
+vi mongo-pv.yml
+kubectl apply -f mongo-pv.yml
+kubectl get pv mongo-pv
+
+# Persistent Volume Claim (PVC) for stroge:
+vi mongo-pvc.yml
+kubectl apply -f mongo-pvc.yml
+kubectl get pvc mongo-pvc
+kubectl get pv mongo-pv
+
+# Mongo Deployment:
+vi mongo-pv.yml
+kubectl apply -f mongo.yml
+kubectl get pods
+kubectl scale --replicas=2 deployment/mongo
+
+Check on worker node:
+docker ps
+docker exec -it ugfutfguugv bash
+mongosh
+
+# App Server (Connect for outside like browser):
+vi mongo-svc.yml
+kubectl apply -f mongo-svc.yml
+kubectl get svc 
+
+Check using worker node ip:
+worker-node-public-ip:30007

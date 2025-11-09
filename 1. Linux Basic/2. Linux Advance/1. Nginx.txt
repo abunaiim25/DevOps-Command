@@ -1,0 +1,118 @@
+--------------- Nginx ---------------
+
+Nginx = ওয়েবসাইট চালানোর জন্য সুপার ফাস্ট ওয়েব সার্ভার + লোড ব্যালেন্সার + রিভার্স প্রক্সি।
+
+1. Nginx Install
+#  yum install nginx -y
+
+# ls /etc/nginx/
+# cat nginx.conf 
+
+2. firewall allow
+# firewall-cmd --permanent --add-service=http --add-service=https --zone=public
+  firewall-cmd --reload
+
+3. SystemD
+# systemctl enable nginx.service --now
+  systemctl status nginx.service
+
+4. index.html page
+# ls /usr/share/nginx/html/
+  rm -rf /usr/share/nginx/html/*  === delete all file
+  ls /usr/share/nginx/html/
+
+  vi /usr/share/nginx/html/index.html
+  systemctl restart nginx.service
+
+
+----- Port change -----
+5.Nginx Config file open:
+# vi /etc/nginx/nginx.conf
+  change listen 80; to listen 8080; 
+  
+# firewall-cmd --permanent --add-port=8080/tcp --zone=public  === যখন HTTP (ওয়েব), HTTPS, FTP, SSH, SMTP ব্যবহার করো → এগুলো সব TCP এর উপর চলে।
+  firewall-cmd --reload
+
+# systemctl enable nginx.service 
+# systemctl status nginx.service
+
+# systemctl restart nginx === if Unable to connect, so restart
+
+
+webpage:
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Business Automation Limited</title>
+</head>
+<body>
+    <h1>This is Business Automation Limited website.</h1>
+</body>
+</html>
+
+----- Stop & Remove Nginx ----- 
+# Stop Nginx if it's running
+sudo systemctl stop nginx
+
+# Disable it so it doesn't start on boot
+sudo systemctl disable nginx
+
+# Remove the package
+sudo yum remove nginx -y
+
+# Optional: remove leftover config
+sudo rm -rf /etc/nginx
+sudo rm -rf /usr/share/nginx/html
+
+---------------------------------------
+yum install nginx -y
+
+systemctl enable nginx.service --now
+systemctl status nginx.service
+
+firewall-cmd --permanent --add-port=80/tcp --zone=public
+firewall-cmd --permanent --add-port=8081/tcp --zone=public
+firewall-cmd --permanent --add-port=8082/tcp --zone=public
+firewall-cmd --reload
+
+Cnfigaration:
+vi /etc/nginx/nginx.conf
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/test1;
+    index index.html;
+}
+server {
+    listen 8081;
+    server_name _;
+    root /usr/share/nginx/test2;
+    index index.html;
+}
+server {
+    listen 8082;
+    server_name _;
+    root /usr/share/nginx/test3;
+    index index.html;
+}
+
+Website:
+mkdir -p /usr/share/nginx/test1
+mkdir -p /usr/share/nginx/test2
+mkdir -p /usr/share/nginx/test3
+
+vi /usr/share/nginx/test1/index.html
+vi /usr/share/nginx/test2/index.html
+vi /usr/share/nginx/test3/index.html
+
+SELinux:
+semanage port -a -t http_port_t -p tcp 8081
+semanage port -a -t http_port_t -p tcp 8082
+
+
+nginx -t === check ok or not
+systemctl restart nginx
+
+
+
+

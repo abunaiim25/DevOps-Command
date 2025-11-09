@@ -1,0 +1,169 @@
+--------------- Firewall ---------------
+
+# Types of Firewall
+Packet-Filtering Firewall
+Stateful Inspection Firewall
+
+
+----- iptables -----
+এটা দিয়ে তুমি network traffic (packet) control করতে পারো।
+মানে – কোন packet allow করবে আর কোনটা drop/block করবে, সেটা rules দিয়ে ঠিক করা যায়।
+Main কাজগুলো:
+Packet Filtering – incoming, outgoing, forwarding packet check করে।
+NAT (Network Address Translation) – যেমন SNAT, DNAT rules apply করা যায়।
+Port Forwarding – এক port থেকে অন্য port এ traffic পাঠানো।
+Firewall Rules – তুমি ঠিক করবে কোন IP, কোন port, কোন protocol allow বা block হবে।
+
+
+----- Types of Security Table -----
+iptables-এ মোট ৫টা main tables থাকে:
+
+# Filter Table – 
+Contains rules about which packets to allow or block (iptables example: INPUT, OUTPUT, FORWARD tables).
+Type of Chain:
+INPUT CHAIN = Outside → Local Machine
+OUTPUT CHAIN = Local Machine → Outside
+FORWARD CHAIN = One Network → Another Network (through the firewall)
+
+
+# NAT Table – 
+Manages Network Address Translation rules (SNAT, DNAT).
+NAT (Network Address Translation) মানে হলো একটা IP address কে আরেকটা IP address এ translate করা।
+এটা সাধারনত রাউটার বা ফায়ারওয়াল করে, যাতে Private IP (যেমন 192.168.x.x, 10.x.x.x) ইন্টারনেটে Public IP ব্যবহার করতে পারে।
+OUTPUT CHAIN
+PREROUTING CHAIN
+POSTROUTING CHAIN
+
+   -> SNAT
+   Full form → Source Network Address Translation
+   কাজ → Source IP পরিবর্তন করা।
+   উদাহরণ:
+   তোমার PC এর IP: 192.168.1.10
+   ইন্টারনেটে request পাঠাচ্ছে।
+   রাউটার request এর source IP (192.168.1.10) কে বদলে public IP (যেমন 103.120.55.5) করে দেয়।
+   তাই server শুধু 103.120.55.5 দেখে।
+   
+   -> DNAT
+   Full form → Destination Network Address Translation
+   কাজ → Destination IP পরিবর্তন করা।
+   উদাহরণ:
+   ধরো তোমার কাছে একটা ওয়েব সার্ভার আছে: 192.168.1.100:80
+   Public IP হলো 103.120.55.5
+   কেউ ব্রাউজারে লিখলো → http://103.120.55.5
+   রাউটার সেই request এর Destination IP 103.120.55.5 থেকে পরিবর্তন করে 192.168.1.100 করে দেয়।
+   তখন তোমার ওয়েব সার্ভার response দিতে পারে।
+   
+   SNAT → Source IP change (ভেতর থেকে বাইরে যাওয়ার সময়)
+   DNAT → Destination IP change (বাইরে থেকে ভেতরে আসার সময়)
+   
+
+
+
+
+# Mangle Table – 
+Packet modify করার জন্য (TTL change, mark, etc.)
+INPUT CHAIN 
+OUTPUT CHAIN 
+FORWARD CHAIN 
+PREROUTING CHAIN
+POSTROUTING CHAIN
+
+
+# Raw Table - 
+connection tracking ছাড়া rules apply করার জন্য
+
+
+# Security – 
+SELinux security context handle করার জন্য
+
+
+Target:
+ACCEPT =Traffic allow, Connection success
+DROP = 	Traffic discard silently, Timeout (no response)
+REJECT =Traffic reject + error reply, তৎক্ষণাৎ connection refused/error
+
+--------------- Practical ---------------
+# systemctl status firewalld
+
+# yum install iptables-services
+# systemctl enable iptables
+# systemctl status iptables
+
+Example:
+# iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+  -A INPUT → INPUT chain এ add করো
+  -p tcp → protocol TCP
+  --dport 22 → destination port 22 (SSH)
+  -j ACCEPT → এই rule match হলে traffic allow করো
+
+
+Iptables Basic Commands:
+Rules show:
+# iptables -L -v -n
+
+Rule add:
+# iptables --policy INPUT ACCEPT === --policy [INPUT, OUTPUT, FORWARD এর default policy set করা]
+
+# iptables --policy INPUT DROP === after this commend my ssh off
+  iptables --policy INPUT ACCEPT === SSH allow
+  
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+# একটা rule delete করা
+iptables -D INPUT -p tcp --dport 80 -j ACCEPT
+
+# সব rules clear করা
+iptables -F
+
+# default policy set করা
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD DROP
+
+
+Common Rules:
+# Allow SSH
+iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+
+# Allow HTTP & HTTPS
+iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -p tcp --dport 443 -j ACCEPT
+
+# Allow loopback 
+iptables -A INPUT -i lo -j ACCEPT
+
+# Drop everything else (default): connection block
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+iptables -P OUTPUT ACCEPT
+
+ACCEPT tcp dpt:22 → SSH connection allow করো।
+DROP tcp dpt:22 → SSH connection ব্লক করো।
+
+Save & Restore Rules:
+# Save rules
+service iptables save
+
+# Restore rules
+service iptables restart
+
+
+Advanced Concepts:
+NAT (Network Address Translation):
+SNAT → Outgoing traffic এর IP change
+DNAT → Incoming traffic এর IP change
+
+# Port forwarding HTTP to internal 192.168.1.100
+iptables -t nat -A PREROUTING -p tcp --dport 8080 -j DNAT --to 192.168.1.100:80
+
+Mangle
+Packet modify করা
+TTL, TOS, MARK set করা
+
+Logging Traffic:
+Iptables Workflow Summary
+Default policy set করো (DROP or ACCEPT)
+Loopback traffic allow করো
+Important services (SSH/HTTP/HTTPS) allow করো
+Extra traffic block করো
+Save rules

@@ -1,0 +1,36 @@
+pipeline {
+  agent any
+  environment {
+    REGISTRY = "your-docker-repo"
+    IMAGE = "${REGISTRY}/laravel-app:latest"
+  }
+  stages {
+    stage('Checkout') {
+      steps { git url: 'https://your-repo.git' }
+    }
+    stage('Build') {
+      steps {
+        sh 'docker build -t ${IMAGE} .'
+      }
+    }
+    stage('Push') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'docker-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+          sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+          sh 'docker push ${IMAGE}'
+        }
+      }
+    }
+    stage('Deploy') {
+      steps {
+        sh 'kubectl apply -f DEPLOYMENT/RBAC/'
+        sh 'kubectl apply -f DEPLOYMENT/database/'
+        sh 'kubectl apply -f DEPLOYMENT/redis/'
+        sh 'kubectl apply -f DEPLOYMENT/laravel-app/'
+        sh 'kubectl apply -f DEPLOYMENT/custom-resource/'
+        sh 'kubectl apply -f DEPLOYMENT/jobs/'
+        sh 'kubectl apply -f DEPLOYMENT/network/'
+      }
+    }
+  }
+}

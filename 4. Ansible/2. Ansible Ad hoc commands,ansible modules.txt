@@ -1,0 +1,49 @@
+----- Host Patterns -----
+[ansible@localhost ~]$ === login Ansible server, Node1 & Node2 through ansible user
+Now, go to ansible server
+# ansible all --list-hosts === all nodes ip 
+# ansible demo --list-hosts === demo group nodes ip 
+# ansible demo[0] --list-hosts === first nodes ip
+# ansible demo[-1] --list-hosts === last nodes ip
+# ansible demo[0:1] --list-hosts === 1 node to 2 node ip
+
+
+----- Ad hoc commands (Overwrite)-----
+Go to ansible server: 
+# su -ansible
+
+# ansible demo -a "ls"
+  ansible all -a "ls"
+  ansible demo[0] -a "touch file1"
+  ansible all -a "touch file4"
+  ansible all -a "ls -al" === all files details
+  
+# ansible demo -a "sudo dnf install httpd -y"
+  check Node1&2 === which httpd
+  or
+  ansible demo -ba "dnf install httpd -y" === b=like sudo
+  ansible demo -ba "dnf remove httpd -y" 
+  
+  
+----- Ansible modules (not overwrite) -----
+Go to ansible server: 
+# su -ansible
+
+# ansible demo -b -m dnf -a "name=httpd state=present" === install
+  ansible demo -b -m dnf -a "name=httpd state=absent" === remove/uninstall
+  ansible demo -b -m dnf -a "name=httpd state=absent"
+  ansible demo -a "sudo rm -f /usr/sbin/httpd" === if not remove httpd(ad hoc)
+
+  ansible demo -b -m service -a "name=httpd state=started enabled=yes" === like systemctl
+  ansible demo -b -m user -a "name=rayhan" === useradd
+  ansible demo[-1] -b -m copy -a "src=file4 dest=/tmp" === copy on last node
+  ansible demo -b -m copy -a "src=file4 dest=/tmp"
+  
+check Node1 & Node2:
+# which httpd
+  systemctl status httpd
+  cat /etc/passwd
+  
+Setup:
+# ansible demo -m setup
+  ansible demo -m setup -a "filter=*ipv4*"

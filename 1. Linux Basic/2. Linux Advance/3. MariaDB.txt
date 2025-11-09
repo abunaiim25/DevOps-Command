@@ -1,0 +1,90 @@
+--------------- MariaDB ---------------
+Website: https://www.redhat.com/en/blog/mysql-mariadb-introduction
+Website: https://mariadb.org/download/?t=repo-config&d=Red+Hat+Enterprise+Linux+9&v=10.6&r_m=kku
+
+Install MariaDB 10.6:
+# vi /etc/yum.repos.d/MariaDB.repo
+  dnf update
+  dnf install MariaDB-server MariaDB-client
+
+  systemctl status mariadb
+  systemctl start mariadb
+  systemctl status mariadb
+  systemctl enable mariadb
+  systemctl status mariadb
+
+Passwor Create:
+# sudo mariadb
+  ALTER user 'root'@'localhost' IDENTIFIED by '12345';
+  mariadb -u root -p
+
+Inside DB:
+# mariadb -u root -p
+  show databases;
+  SHOW VARIABLES LIKE 'port';
+
+
+----- MariaDB Port Change (3307)-----
+# vi /etc/my.cnf.d/mariadb-server.cnf
+  [mysqld]
+  port=3308
+
+# systemctl restart mariadb
+
+# ss -tulnp | grep mariadb == Check
+
+# mariadb -u root -p --port=3308
+  SHOW VARIABLES LIKE 'port';
+    
+----- SQLYug Connection -----
+1) MariaDB পোর্ট কনফার্ম করুন
+  ss -tulnp | grep mariadb
+# vi etc/my.cnf.d/mariadb-server.cnf
+  [mysqld]
+  port=3308
+  bind-address=0.0.0.0
+
+2) Firewall খুলুন (3308)
+# sudo firewall-cmd --add-port=3308/tcp --permanent
+# sudo firewall-cmd --reload
+
+3) Remote ইউজার তৈরি করুন
+root ইউজার সাধারণত রিমোট থেকে ব্লক থাকে। তাই আলাদা ইউজার বানান:
+# mariadb -u root -p --port=3308
+
+% মানে যেকোনো IP থেকে কানেকশন করা যাবে। এই ইউজারকে সার্ভারের যেকোনো নেটওয়ার্ক থেকে লগইন করার অনুমতি দেয়।
+# CREATE USER 'dbuser1'@'%' IDENTIFIED BY '12345';
+  GRANT ALL PRIVILEGES ON *.* TO 'dbuser1'@'%' WITH GRANT OPTION;
+  FLUSH PRIVILEGES;
+or
+এখানে শুধু নির্দিষ্ট IP (উদাহরণ: 192.168.174.1) থেকে কানেকশন করার অনুমতি দেয়।
+# CREATE USER 'dbuser1'@'192.168.174.1' IDENTIFIED BY '12345'; === Windows IP
+# GRANT ALL PRIVILEGES ON *.* TO 'dbuser1'@'192.168.174.1' WITH GRANT OPTION;
+  FLUSH PRIVILEGES;
+
+  
+User show:
+# SELECT User, Host FROM mysql.user;
+
+
+
+
+4) VM IP বের করুন
+#  ip a === 192.168.174.141
+
+5) Windows থেকে টেস্ট করুন
+PowerShell এ লিখুন:
+# Test-NetConnection 192.168.10.203 -Port 3308 === যদি Success আসে তবে SQLyog-এ কানেক্ট করা যাবে।
+
+6) SQLyog-এ কনফিগ দিন
+MySQL Host Address → 192.168.174.141
+Username → dbuser1
+Password → 12345
+Port → 3308
+SSL → None
+তারপর Test Connection → Connect
+
+
+
+
+

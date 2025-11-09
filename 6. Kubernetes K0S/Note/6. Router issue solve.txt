@@ -1,0 +1,72 @@
+আরে ভাই, এবার পুঙ্খানুপুঙ্খ ধরা গেল 😎
+
+Log এর মেইন error:
+
+```
+failed to run kube-router: failed to create network routing controller: CNI conf file /etc/cni/net.d/10-kuberouter.conflist does not exist.
+panic: runtime error: invalid memory address or nil pointer dereference
+```
+
+মানে:
+
+* **CNI config file missing** → kube-router শুরু হতে পারছে না।
+* `10-kuberouter.conflist` নেই `/etc/cni/net.d/` এ।
+* তাই pod crash/Back-off loop হচ্ছে।
+
+---
+
+### ✅ Fix: Reinstall/reset CNI for k0s
+
+1. **Stop k0s**
+
+```bash
+sudo k0s stop
+```
+
+2. **Clean old CNI files**
+
+```bash
+sudo rm -rf /var/lib/cni/*
+sudo rm -rf /etc/cni/net.d/*
+sudo rm -rf /opt/cni/bin/*
+```
+
+3. **Start k0s again**
+
+```bash
+sudo k0s start
+```
+
+4. **Check kube-router pod**
+
+```bash
+kubectl get pods -n kube-system
+kubectl logs -n kube-system -l k8s-app=kube-router -c kube-router
+```
+
+---
+
+### ⚡ Optional: If still fails
+
+Sometimes k0s auto-install of CNI fails. Then:
+
+```bash
+sudo k0s kubeconfig admin > kubeconfig
+export KUBECONFIG=$(pwd)/kubeconfig
+sudo k0s install controller --enable-worker
+```
+
+এতে CNI binaries ও config fresh হবে।
+
+---
+
+💡 TL;DR:
+
+* Pod crash কারণ **missing CNI config**
+* Solution: **Stop k0s → delete old CNI → start k0s**
+* তারপর kube-router pod automatically recreate হবে।
+
+---
+
+যদি চাও, আমি তোর জন্য **একটা একলাইনার fix command** বানাতে পারি যা সব CNI reset + kube-router pod recreate করবে।
+চাস আমি সেটা বানাই?

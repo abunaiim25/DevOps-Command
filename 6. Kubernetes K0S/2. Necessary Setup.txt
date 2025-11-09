@@ -1,0 +1,186 @@
+## **D. After Cluster is Up**
+
+###--- 1. **Install Helm**:
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+helm version
+
+
+
+###--- 2. **CNI Plugin Install cilium install**
+helm repo add cilium https://helm.cilium.io/
+helm repo update
+
+# vim cilium-values.yaml
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+
+helm install cilium cilium/cilium --version 1.15.0   --namespace kube-system   --create-namespace   -f /home/naiim/cilium-values.yaml
+kubectl get pods -n kube-system
+kubectl get pods -A
+kubectl get svc -n kube-system
+kubectl patch svc hubble-ui -n kube-system -p '{"spec":{"type": "NodePort"}}'
+kubectl get svc hubble-ui -n kube-system
+
+browser: http://192.168.10.203:30968/
+
+
+
+
+###--- 3. **Install Argo CD**:
+helm repo add argo https://argoproj.github.io/argo-helm
+helm repo update
+
+# Install Argo CD in namespace 'argocd' with default values
+# vim argocd-values.yaml
+server:
+  service:
+    type: NodePort
+    nodePort: 30007  # change if needed
+  ingress:
+    enabled: false
+controller:
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+repoServer:
+  resources:
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+dex:
+  enabled: false
+
+
+helm upgrade argocd argo/argo-cd \
+  --namespace argocd \
+  --create-namespace \
+  -f /home/naiim/argocd-values.yaml
+
+verify:
+helm list -A
+kubectl get pods -n argocd
+kubectl get svc -n argocd
+
+-----
+if need then apply
+ClusterIP to NodePort (If need):
+kubectl patch svc agrocd-server -n argocd -p '{"spec":{"type": "NodePort"}}
+
+Port forwording for exposing on browswe:
+kubectl port-forward svc/argocd-server -n argocd 30007:80 --address=0.0.0.0 &
+
+firewall check:
+sudo ufw status
+
+public IP address:
+curl ifconfig.me
+-----
+
+Search Browser:
+https://192.168.10.203:30007
+
+Argo CD Initial Admin Password:
+kubectl get secret -n argocd argocd-initial-admin-secret \
+  -o jsonpath="{.data.password}" | base64 -d && echo
+
+User: admin
+Password: Aq08zzUfo5aSo5nI
+
+Application access on browser:
+kubectl get svc
+kubectl port-forward svc/vote 5000:5000 --address=0.0.0.0 &
+kubectl port-forward svc/vote 5001:5001 --address=0.0.0.0 &
+Browser:
+http://192.168.10.203:31001   # result service
+http://192.168.10.203:31002   # vote service
+
+kubectl exec -it db-7f5444f5b7-mqvc2 -- /bin/bash
+psql -U postgres 
+\l
+
+
+
+
+
+
+###--- 4. **Install Kong (Ingress Controller)**:
+
+helm repo add kong https://charts.konghq.com
+helm repo update
+
+# vim kong-values.yaml
+
+helm upgrade kong kong/kong \
+  --namespace kong \
+  --create-namespace \
+  -f /home/naiim/kong-values.yaml
+
+export KUBECONFIG=/var/lib/k0s/pki/admin.conf
+
+Verify:
+kubectl get pods -n kong
+kubectl get svc -n kong
+kubectl get crds | grep kong
+
+
+OR: 
+
+helm repo add kong https://charts.konghq.com
+helm repo update
+kubectl create namespace kong-gateway
+helm upgrade kong kong/ingress -n kong-gateway -f /home/naiim/kong-values.yaml
+
+
+
+
+
+
+###--- 5. Installing Kubernetes Dashboard
+Deploy Kubernetes dashboard:
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+
+# vim dashboard.yaml
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+
+kubectl apply -f dashboard.yaml
+kubectl get svc -n kubernetes-dashboard
+kubectl patch svc/kubernetes-dashboard -n kubernetes-dashboard -p '{"spec":{"type": "NodePort"}}'
+kubectl get svc -n kubernetes-dashboard
+Browser:
+https://192.168.10.203:30941
+
+Create a token for dashboard access:
+kubectl -n kubernetes-dashboard create token admin-user
+
+
+

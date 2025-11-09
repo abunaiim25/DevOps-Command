@@ -1,0 +1,21 @@
+SSH connection:
+sudo apt install openssh-server -y
+sudo systemctl enable ssh
+sudo systemctl start ssh
+sudo systemctl status ssh
+
+Root User:
+sudo su / sudo -i
+sudo passwd root === root password create
+
+Hostname Change:
+sudo hostnamectl set-hostname master-node
+sudo init 6
+sudo hostnamectl set-hostname worker-node-1
+sudo init 6
+sudo hostnamectl set-hostname worker-node-2
+sudo init 6
+
+
+kubectl get nodes && kubectl get pods -n kube-system 
+

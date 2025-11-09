@@ -1,0 +1,67 @@
+# --------------- AgroBd ---------------
+FROM php:8.2-apache
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Enable Apache rewrite
+RUN a2enmod rewrite
+
+# Set Apache DocumentRoot to Laravel's public directory
+RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf
+
+# Copy project files
+COPY . /var/www/html
+
+WORKDIR /var/www/html
+
+# Fix permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
+
+EXPOSE 80
+
+
+# --------------- Naiim_Protfolio ---------------
+FROM python:3.12-alpine
+
+WORKDIR /var/www/html
+
+COPY . .
+
+EXPOSE 80
+
+CMD ["python3", "-m", "http.server", "80", "--bind", "0.0.0.0"]
+
+
+# --------------- React_Protfolio ---------------
+# Stage 1: Build React app
+FROM node:22 AS build   
+
+WORKDIR /var/www/html
+
+# Install dependencies first
+COPY package*.json ./
+RUN npm ci
+
+# Copy project files
+COPY . .
+
+# Fix react-scripts permission
+RUN chmod +x node_modules/.bin/react-scripts
+
+# Build React app
+RUN npm run build
+
+# Stage 2: Nginx serve static files
+FROM nginx:alpine
+
+# Copy build output to Nginx html directory
+COPY --from=build /var/www/html/build /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]

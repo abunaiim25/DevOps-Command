@@ -1,0 +1,190 @@
+--------------- File & Directory Permission ---------------
+
+*Permissions define what action a user can perform on a file or directory
+
+* For file permission check === ls -l <file_path>
+-     rw-     r--     r--
+Type  Owner   Group   Other
+
+* For directory permission check === ls -ld <directory-path>
+d     rwx     r-x     r-x
+Type  Owner   Group   Other
+
+Type:
+- === File
+d === Directory
+l === Link
+Owner: Who created the file
+Group: Primary group of the owner of the file will be the group of the file.
+Other: Users other than owner and the group members
+
+* Access Modes:
+Read === The user can read the data of file/directory
+Write === The user can modify the data of file/directory
+Execute === The use can execute the file or directory
+
+* For file: 
+Read === cat, less, more, head, tail, grep
+Write === >, >>
+Execute === For run any file need execute permission
+For directory: 
+Read === ls
+Write === touch, mkdir, rmdir, rm 
+Execute === cd
+
+* file/directory permission change 2 way:
+1. Symbolic Method
+Read=r   Write=w   Execute=x
+Owner=u  Group=g   Other=o   All=a
+Add=+    Remove=-  Assign==
+
+Add permission: chmod u/w/o/a + r/w/x/rw/wx/rx/rwx <file_dir_path>
+chmod u+r testfile
+chmod g+rx testfile 
+chmod o+rwx testfile 
+chmod a+rw testfile 
+
+Remove permission: chmod u/w/o/a - r/w/x/rw/wx/rx/rwx <file_dir_path>
+chmod u-r testfile
+chmod g-rx testfile 
+chmod o-rwx testfile 
+chmod a-rw testfile 
+
+Assign permission: chmod u/w/o/a = r/w/x/rw/wx/rx/rwx <file_dir_path>
+chmod u=r testfile
+chmod g=rx testfile 
+chmod o=rwx testfile
+chmod a=rw testfile  
+
+2. Numerical/Absolution Method 
+Read = 4
+Write = 2
+Execute = 1
+No Permission = 0
+
+-     rw-       r--       r--
+Type  Owner     Group     Other
+
+Set:  rwx       r-x       r-x
+      4+2+1=7   4+0+1=5   4+0+1=5
+chmod <permission_value> <file_dir_path>
+chmod 755 testfile
+	  
+--------------- File Permission ---------------
+cd /
+ls
+
+File permission:
+# touch testfile
+# ls -l testfile 
+
+# echo this is good day > testfile
+  echo -e "apple\nred\norange\nbanana" >> testfile
+  cat testfile
+# ls -l testfile 
+
+Read permission off:
+# chmod 0 testfile ===  (root user write this command)
+# su naiim === login by naiim user
+  ls
+  cat testfile === Permission denied
+Read permission on:
+# chmod 004 testfile
+  ls -l testfile
+  
+Write permission on: 
+# chmod 006 testfile 
+# su naiim 
+  echo my day >> testfile
+  cat testfile
+  
+Execute permission on:
+  ls -l testfile
+# chmod 7 testfile
+  ls -l testfile
+Execute permission off:
+# chmod 000 testfile
+
+
+--------------- Directory Permission ---------------
+Directory permission:
+# mkdir data_folder
+# ls -ld data_folder
+
+Read permission off:
+# chmod 0 data_folder
+  ls -ld data_folder
+# su naiim 
+  cd data_folder === message: Permission denied
+Read permission on:
+# chmod 4 data_folder
+  ls -ld data_folder
+# su naiim 
+  cd data_folder === still Permission denied, need execute permission
+
+Execute permission on:
+# chmod 5 data_folder
+  ls -ld data_folder
+# su naiim 
+  cd data_folder === ok
+  
+Write permission on:
+# chmod 7 data_folder
+  ls -ld data_folder
+# su naiim 
+  cd data_folder
+  mkdir /data_folder/test1
+  touch /data_folder/file1
+  
+--------------- Symbolic Method ---------------
+Add permission: chmod u/w/o/a + r/w/x/rw/wx/rx/rwx <file_dir_path>
+# chmod u+r testfile
+  ls -l testfile
+# chmod g+rx testfile 
+  ls -l testfile
+# chmod o+rwx testfile 
+  ls -l testfile
+  
+Remove permission: chmod u/w/o/a - r/w/x/rw/wx/rx/rwx <file_dir_path>
+# chmod o-x testfile
+  ls -l testfile
+
+Assign permission: chmod u/w/o/a = r/w/x/rw/wx/rx/rwx <file_dir_path>
+# chmod g=rwx testfile
+  ls -l testfile
+
+--------------- Numerical Method ---------------
+chmod <permission_value> <file_dir_path>
+# chmod 755 testfile
+  ls -l testfile
+
+------------------------Note--------------------------
+File Identity + Permission:
+# -rw-r--r--. 1 root root 0 Aug 25 09:38 testfile
+- → Type = File (normal file)
+rw- → Owner permission (owner read + write করতে পারবে, execute নাই)
+r-- → Group permission (group শুধু read করতে পারবে)
+r-- → Other permission (others শুধু read করতে পারবে)
+. → SELinux context indicator
+1 → Hard link count (ফাইলের একটা hard link আছে)
+root (প্রথমটা) → Owner name = root
+root (দ্বিতীয়টা) → Group name = root
+0 → Size (bytes → এই ফাইল এখন empty)
+Aug 25 09:38 → Last modification date/time
+testfile → File name
+
+Directory Identity + Permission: 
+# drwxr-xr-x. 2 root root 6 Aug 25 10:01 data_folder
+d → Type = Directory
+rwx → Owner permission = read + write + execute
+r-x → Group permission = read + execute (লিস্ট দেখতে ও ঢুকতে পারবে, কিন্তু modify করতে পারবে না)
+r-x → Other permission = read + execute
+. → SELinux context indicator
+2 → Hard link count (directory সবসময় কমপক্ষে 2 link থাকে: নিজস্ব . আর parent এর ..)
+root (প্রথমটা) → Owner name = root
+root (দ্বিতীয়টা) → Group name = root
+6 → Size in bytes (ডিরেক্টরির entry size, খুব ছোট কারণ ফাঁকা বা কম entry আছে)
+Aug 25 10:01 → Last modification date/time
+data_folder → Directory name
+ 
+

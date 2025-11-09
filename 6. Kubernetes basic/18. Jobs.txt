@@ -1,0 +1,59 @@
+==========================jobs===========================
+###--- After task completed, Container off, not restart
+vi jobs.yaml
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: testjob
+spec:
+  template:
+    metadata:
+      name: testjob
+    spec:
+      containers:
+        - name: counter
+          image: centos:7
+          command: ["/bin/bash", "-c", "echo Technical-Guftgu; sleep 5"]
+      restartPolicy: Never
+
+Commands:
+kubectl apply -f jobs.yaml
+kubectl get jobs
+
+kubectl get pods
+watch !!
+
+kubectl logs testjob-zwpl7
+kubectl delete -f jobs.yaml
+
+
+
+###--- After task completed, Container off and deleted
+vi jobs2.yaml
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: testjob
+spec:
+  parallelism: 5                 # Run 5 Pods in parallel
+  activeDeadlineSeconds: 10      # Timeout after 10 seconds
+  template:
+    metadata:
+      name: testjob
+    spec:
+      containers:
+        - name: counter
+          image: centos:7
+          command: ["/bin/bash", "-c", "echo Technical-Guftgu; sleep 20"]
+      restartPolicy: Never
+
+
+Commands:
+kubectl apply -f jobs2.yaml
+kubectl get pods
+watch !!
+
+kubectl get jobs
+kubectl delete -f jobs2.yaml

@@ -1,0 +1,120 @@
+
+# *Apache Tomcat & JDK on Ubuntu*
+
+## 🧩 *Step 1: Update the System*
+
+Update all existing Ubuntu packages:
+sudo apt update && sudo apt upgrade -y
+
+## ☕ *Step 2: Install and Set Up Java JDK 8 (v8u221)*
+
+### 🔹 2.1 Create a directory for Java
+sudo mkdir -p /usr/java
+
+### 🔹 2.2 Copy the JDK tarball to /usr/java/
+cp jdk-8u221-linux-x64.tar.gz /usr/java/
+
+
+### 🔹 2.3 Extract the JDK
+cd /usr/java
+tar -zxvf jdk-8u221-linux-x64.tar.gz
+
+### 🔹 2.4 Set permissions 
+chmod -R 777 jdk1.8.0_221/
+
+
+## ⚙ *Step 3: Set Java Environment Variables*
+
+### 🧭 Option A: Temporary (current session only)
+JAVA_HOME=/usr/java/jdk1.8.0_221
+export JAVA_HOME
+PATH=$JAVA_HOME/bin:$PATH
+export PATH
+
+Verify Java installation:
+java -version
+
+or
+
+### 🔒 Option B: Permanent (for all future sessions)
+echo 'JAVA_HOME=/usr/java/jdk1.8.0_221' >>~/.bash_profile
+echo 'export JAVA_HOME' >>~/.bash_profile
+echo 'PATH=$JAVA_HOME/bin:$PATH' >>~/.bash_profile
+echo 'export PATH' >>~/.bash_profile
+
+Apply the changes:
+source ~/.bash_profile
+
+Check Java version:
+java -version
+
+
+## 🐱‍💻 *Step 4: Install and Set Up Apache Tomcat 8.0.53*
+
+### 🔹 4.1 Copy Tomcat tarball to /opt
+cp apache-tomcat-8.0.53.tar.gz /opt
+
+### 🔹 4.2 Extract Tomcat
+cd /opt
+tar -zxvf apache-tomcat-8.0.53.tar.gz
+
+### 🔹 4.3 Rename folder for simplicity
+mv apache-tomcat-8.0.53 tomcat
+
+### 🔹 4.4 Set permissions
+chmod -R 777 /opt/tomcat/
+
+
+## ▶ *Step 5: Start and Stop Tomcat*
+Navigate to Tomcat bin directory:
+cd /opt/tomcat/bin
+
+### 🟢 Start Tomcat:
+sh startup.sh
+
+### 🔴 Stop Tomcat:
+sh shutdown.sh
+
+
+## 🔍 *Step 6: Verify Tomcat is Running(Optional Step- for Checking)*
+Check if Tomcat is listening on port 8080:
+sudo ss -tulnp | grep java
+
+You should see *port 8080* (or your configured port).
+Check running process:
+ps -ef | grep tomcat
+
+View live Tomcat logs:
+tail -f /opt/tomcat/logs/catalina.out
+
+
+## 🔐 *Step 7: Configure Tomcat Manager App*
+Open the Tomcat users file:
+sudo vim /opt/tomcat/conf/tomcat-users.xml
+
+Add a manager/admin user inside <tomcat-users>:
+<user name="admin" password="admin" roles="admin-gui,manager-gui" />
+
+Firewall allow:
+
+
+Save and exit, then restart Tomcat:
+cd /opt/tomcat/bin
+sh shutdown.sh
+sh startup.sh
+
+
+8443 ssl:
+mkdir -p /opt/tomcat/ssl
+
+sudo /usr/java/jdk1.8.0_221/bin/keytool -genkeypair -alias tomcat -keyalg RSA -keysize 2048 \
+  -keystore /opt/tomcat/ssl/keystore.p12 -storeType PKCS12 \
+  -validity 3650 -storepass changeit
+
+
+<Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+           maxThreads="150" SSLEnabled="true" scheme="https" secure="true"
+           clientAuth="false" sslProtocol="TLS"
+           keystoreFile="/opt/tomcat/ssl/keystore.p12"
+           keystorePass="12345Q"
+           keystoreType="PKCS12" />

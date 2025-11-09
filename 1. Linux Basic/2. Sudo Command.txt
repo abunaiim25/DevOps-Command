@@ -1,0 +1,24 @@
+--------------- SUDO - Super User Do ---------------
+
+1. There must be an entry for the user in the sudoers file.
+2. Use must be a member of wheel group.
+
+# grep wheel /etc/group
+
+Access root user & normal user: 
+# su rayhan === [root@localhost ~]# to [rayhan@localhost root]$
+# su - / exit === [rayhan@localhost root]$ to [root@localhost ~]#
+
+# passwd rayhan === Password add from root user
+# gpasswd rayhan === Group password add from root user
+
+If not have password permission: (Permission by root user)
+# cat /etc/sudoers (Not edit from this)
+# visudo === Add Permission
+# [rayhan ALL=(ALL) ALL]] === i (Keyboard)
+# :wq! === Esc(Keyboard) 
+
+# sudo useradd raj === Now can i add raj from rayhan user
+
+# usermod -G wheel raj
+# gpasswd -a raj wheel 

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qserver47
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qserver47
+  template:
+    metadata:
+      labels:
+        app: qserver47
+    spec:
+      containers:
+        - name: tomcat
+          image: mdnaiim/tomcat-based-img
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: qserver47-data
+              mountPath: /opt/tomcat/webapps
+      volumes:
+        - name: qserver47-data
+          persistentVolumeClaim:
+            claimName: qserver47-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qserver47-service
+  namespace: demo
+spec:
+  selector:
+    app: qserver47
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qserver47-ingress
+  namespace: demo
+  annotations:
+    konghq.com/protocols: "http,https"
+    konghq.com/strip-path: "false"
+spec:
+  ingressClassName: kong
+  rules:
+    - host: 
+      http:
+        paths:
+          - path: /qserver47
+            pathType: Prefix
+            backend:
+              service:
+                name: qserver47-service
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qserver47-service
+                port:
+                  number: 8080

@@ -1,0 +1,94 @@
+ওকে Naiim, বুঝতে পারছি—তোমার VM এখন **hang হচ্ছে কারণ root filesystem full / ephemeral storage কম**, তাই Kubernetes pods schedule করতে পারছে না। তুমি চাইছো **পুরো disk safely expand করে VM আবার useable করা**। আমি step-by-step ঠিক করে দিচ্ছি।
+
+---
+
+### Step 0: Check current disk usage
+
+```bash
+df -h
+lsblk
+sudo lvdisplay
+sudo vgdisplay
+sudo pvdisplay
+```
+
+* Confirm করো root LV কত GB, total PV কত free space আছে।
+* এখন `/` মাত্র 10GB, PV ~18GB, তাই expand করা যাবে।
+
+---
+
+### Step 1: Extend the LVM logical volume
+
+```bash
+sudo lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+```
+
+
+* এখন logical volume **সকল leftover space** use করবে (~18GB)।
+* যদি path ঠিক না হয়, `lvdisplay` দেখে adjust করো।
+
+---
+
+### Step 2: Resize the filesystem
+
+* যদি ext4 filesystem:
+
+```bash
+sudo resize2fs /dev/ubuntu-vg/ubuntu-lv
+```
+
+* যদি xfs filesystem:
+
+```bash
+sudo xfs_growfs /
+```
+
+* এখন `/` partition পুরো logical volume ব্যবহার করবে।
+
+---
+
+### Step 3: Verify
+
+```bash
+df -h /
+lsblk
+```
+
+* দেখবে root filesystem এখন ~18GB।
+
+---
+
+### Step 4: Clean old Docker / Kubernetes artifacts
+
+Single-node cluster এ ephemeral storage কম হলে pods auto-evict হয়। Cleanup:
+
+```bash
+docker system prune -af       # unused images, containers, volumes remove
+crictl rmi $(crictl images -q)   # if containerd used
+sudo rm -rf /var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/*
+sudo rm -rf /var/log/*.log    # old log files
+```
+
+---
+
+### Step 5: Remove disk-pressure taint (if applied)
+
+```bash
+kubectl taint nodes naiimubuntu node.kubernetes.io/disk-pressure:NoSchedule-
+```
+
+* এখন Kubernetes pods smooth schedule হবে।
+
+---
+
+✅ এই steps শেষ করলে:
+
+* Root filesystem 18GB হবে।
+* Disk-pressure issue gone।
+* VM hang/eviction problem gone।
+* Single-node k8s cluster আবার normal useable।
+
+---
+
+Naiim, চাইলে আমি তোমার জন্য **full single-node optimized guide** বানিয়ে দিতে পারি যেখানে **ArgoCD + Cilium + Kong** smooth install হবে, আর disk/memory/CPU optimize থাকবে।
+চাও কি সেটা করি?

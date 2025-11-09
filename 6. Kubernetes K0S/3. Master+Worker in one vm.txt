@@ -1,0 +1,69 @@
+sudo date -s "2025-10-12 10:30:00"
+
+
+## **1️⃣ VM Requirements**
+
+* OS: Ubuntu 20.04/22.04 (বা অন্য Debian-based)
+* RAM: 4GB+ (master+worker একসাথে)
+* CPU: 2 cores+
+* Disk: 20GB+
+* Container runtime: k0s নিজেই containerd নিয়ে আসে
+
+---
+
+## **2️⃣ k0s Install**
+# Download k0s binary
+sudo su
+apt update -y
+curl -sSLf https://get.k0s.sh | sudo sh
+or
+sudo apt install -y aria2
+aria2c -x 16 -s 16 https://github.com/k0sproject/k0s/releases/download/v1.34.1+k0s.0/k0s-v1.34.1+k0s.0-amd64 -o k0s
+# mv /home/naiim/k0s.1 /home/naiim/k0s
+chmod +x /home/naiim/k0s
+sudo mv /home/naiim/k0s /usr/local/bin/
+
+# Check version
+k0s version
+
+
+---
+
+## **3️⃣ Initialize Master Node**
+sudo k0s install controller --single
+
+sudo systemctl start k0scontroller
+sudo systemctl enable k0scontroller
+
+sudo k0s status
+
+
+> `--single` use করলে master+worker একই node-এ থাকবে।
+> চাইলে আলাদা worker node রাখতে পারো।
+
+---
+I not use this.
+## **4️⃣ Generate Join Token (Optional for other workers)**
+sudo k0s token create --role=worker
+
+> এই token অন্য node-এ worker join করানোর জন্য লাগে।
+> এক VM-এ master+worker হলে token create করা optional।
+
+---
+
+## **5️⃣ Check Cluster Status**
+sudo k0s kubectl get nodes
+sudo k0s kubectl get pods -A
+
+> দেখবে master+worker (single node) Active & Ready, আর system pods running।
+
+
+# K0S alias to kubectl:
+echo "alias kubectl='k0s kubectl'" >> ~/.bashrc
+source ~/.bashrc
+#
+export KUBECONFIG=/var/lib/k0s/pki/admin.conf
+
+---
+
+

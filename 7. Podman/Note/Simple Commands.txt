@@ -1,0 +1,24 @@
+cp -r logs /opt/tomcat/logs_backup
+
+
+Force demove:
+podman inspect 973cca9c8af0 | grep RestartPolicy -A 3
+podman stop 973cca9c8af0
+podman rm 973cca9c8af0
+
+
+###--- Copy file VM to Desktop:
+VM:
+cd /
+mkdir -p /home/naiim/logs_copy
+cp -r /root/logs/* /home/naiim/logs_copy/
+chown -R naiim:naiim /home/naiim/logs_copy
+chmod -R 755 /home/naiim/logs_copy
+
+Desktop Power Shell:
+scp -r naiim@10.10.200.35:/home/naiim/logs_copy C:/Users/User/Desktop/logs
+Nd3!g$mKiP8sT
+
+
+podman kill 1883d625298f
+podman start 1883d625298f

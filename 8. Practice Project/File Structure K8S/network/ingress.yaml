@@ -1,0 +1,17 @@
+# ingress.yaml placeholder
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: network-ingress
+spec:
+  rules:
+    - host: network.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: network-service
+                port:
+                  number: 80

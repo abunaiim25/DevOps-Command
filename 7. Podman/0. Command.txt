@@ -1,0 +1,24 @@
+# Time set bd
+vi /opt/tomcat/conf/logging.properties
+java.util.logging.SimpleFormatter.format=%1$tF %1$tT [%4$s] %2$s - %5$s %n
+
+
+# network
+podman network disconnect podman mysql
+podman network ls
+podman inspect mysql
+
+
+Vm Host to container:
+podman cp /etc/qms/qpe.war tomcat-https:/opt/tomcat/webapps
+
+
+date time fix:
+Inside container
+apk add tzdata
+ln -sf /usr/share/zoneinfo/Asia/Dhaka /etc/localtime
+date
+
+
+Search txt:
+grep -i "RequestBody" /opt/tomcat/logs/stdout.log

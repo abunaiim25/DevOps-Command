@@ -1,0 +1,47 @@
+----- Minikube Setup -----
+Website: https://dev.to/dm8ry/how-to-install-minikube-on-ubuntu-2404-2gdj
+
+sudo su
+apt update && apt upgrade -y
+
+Step 1: Install kubectl 
+sudo snap install kubectl --classic
+
+Step 2: Download Minikube
+wget https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 -O minikube
+
+Step 3: Make the Binary Executable 
+chmod 755 minikube 
+
+Step 4: Move Binary to /usr/local/bin
+sudo mv minikube /usr/local/bin/
+
+Step 5: Docker Install 
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# ইউজারকে docker গ্রুপে দাও (root ছাড়া চালাতে চাইলে, do without root)
+naiim@rayhan:~$
+sudo usermod -aG docker $USER
+newgrp docker
+
+Step 6: Start Minikube 
+naiim@rayhan:~$
+minikube start
+or
+minikube start --driver=docker
+kubectl get nodes
+
+Step 7: Verify the Installation 
+minikube status                              # check minikube status
+kubectl version                              # check kubectl version
+o/t: 
+minikube version: v1.34.0
+commit: 210b148df93a80eb872ecbeb7e35281b3c582c61
+
+
+Minikube VM এ ঢুকে nginx image pull করো:
+minikube ssh
+docker pull nginx:latest

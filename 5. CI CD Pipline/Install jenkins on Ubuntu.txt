@@ -1,0 +1,31 @@
+https://www.jenkins.io/doc/book/installing/
+
+Jenkins Install on RHEL 9:
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade -y
+
+# Add required dependencies for the jenkins package
+sudo yum install fontconfig java-21-openjdk -y
+sudo yum install jenkins -y
+sudo systemctl daemon-reload
+
+java -version
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+Firewall rule দাও (যদি firewall চালু থাকে)
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+
+Jenkins unlock password বের করো
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Browser এ Jenkins খুলো
+192.168.174.144:8080
+
+passwod past to jenkins: 5f434183a8ec415d8f2c6836d3722461
+
+---------------------

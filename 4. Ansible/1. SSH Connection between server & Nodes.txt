@@ -1,0 +1,90 @@
+https://www.redhat.com/en/blog/install-epel-linux
+
+For Ansible Server:
+Step 1: সিস্টেম আপডেট করো
+# sudo dnf update -y
+
+Step 2: রিপো Enable করো
+RHEL 9 এ EPEL আর CodeReady Builder repo দরকার।
+# sudo subscription-manager repos --enable codeready-builder-for-rhel-9-$(arch)-rpms
+# sudo dnf install \
+https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y
+# ls
+# sudo dnf install epel-release -y
+
+Step 3: প্রয়োজনীয় প্যাকেজ ইন্সটল করো
+# sudo dnf install git python3 python3-pip python3-jmespath python3-cryptography openssl python3-pyyaml python3-setuptools ansible -y
+  ansible --version
+  
+Step 4: Inventory File (hosts) কনফিগার করো
+# sudo vi /etc/ansible/hosts
+[demo]
+192.168.174.144 # Node1
+192.168.174.138 # Node2
+
+Step 5: ansible.cfg কনফিগার করো
+# sudo vi /etc/ansible/ansible.cfg
+[defaults]
+inventory = /etc/ansible/hosts
+remote_user = ansible
+host_key_checking = False
+
+
+----- Create user & Ansible server connected with Node 1,2-----
+
+Step 1: সব সার্ভারে ansible user create করো (Ansible server, Node1 & Node2)
+# useradd ansible
+# passwd ansible
+
+ansible user কে sudo access দাও:
+visudo চালাও:
+# visudo
+  ansible ALL=(ALL) NOPASSWD: ALL
+
+Switch as ansible user:
+# su - ansible
+
+Step 2: Apache server install on (Ansible server)
+# sudo dnf install httpd -y
+
+# ssh 192.168.174.144
+
+Step 3: SSH config ফিক্স করো (Ansible server, Node1 & Node2)
+# vi /etc/ssh/sshd_config
+PermitRootLogin yes
+PasswordAuthentication yes
+
+Save করে SSH restart করো:
+# systemctl restart sshd
+
+Step 4: ansible user দিয়ে manual SSH test করো
+তোমার ansible control node থেকে run করো:
+# su - ansible
+# ssh ansible@192.168.174.144
+
+
+----- Trust relstionship (without password) -----
+[ansible@localhost ~]$ === login Ansible server, Node1 & Node2 through ansible user
+Now, go to ansible server
+# ssh-keygen 
+  ls -a
+  cd .ssh/
+  ssh-copy-id ansible@192.168.174.144
+  ssh-copy-id ansible@192.168.174.138
+  
+  check:
+  ssh 192.168.174.138
+  
+# ansible all -m ping
+node1 | SUCCESS => {"changed": false, "ping": "pong"}
+node2 | SUCCESS => {"changed": false, "ping": "pong"}
+
+
+----- Host Patterns -----
+[ansible@localhost ~]$ === login Ansible server, Node1 & Node2 through ansible user
+Now, go to ansible server
+# ansible all --list-hosts === all nodes ip 
+# ansible demo --list-hosts === demo group nodes ip 
+# ansible demo[0] --list-hosts === first nodes ip
+# ansible demo[-1] --list-hosts === last nodes ip
+# ansible demo[0:1] --list-hosts === 1 node to 2 node ip

@@ -1,0 +1,65 @@
+apiVersion: v1                        # Kubernetes API version
+kind: ReplicationController           # This resource manages multiple replicas of a Pod
+metadata:
+  name: myreplica                     # Name of the ReplicationController
+
+spec:
+  replicas: 2                         # Number of Pod replicas to run
+  selector:
+    myname: my_naiim                  # Selector to match the Pods controlled by this RC
+  
+  template:                           # Pod template used for creating replicas
+    metadata:
+      labels:
+        myname: my_naiim              # Labels applied to each Pod; must match selector
+      annotations:
+        description: I am abu Naiim   # Optional annotation for description
+    
+    spec:
+      containers:
+        - name: ubuntu-container      # First container name
+          image: ubuntu               # Container image
+          command: ["/bin/bash", "-c", "while true; do echo Hello-Naiim; sleep 5; done"]  # Run continuously
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"     # Environment variable inside container
+          ports:
+            - containerPort: 8080    # Exposed container port
+
+
+        - name: httpd-container       # Second container name
+          image: httpd                # Apache HTTPD image
+          command: ["/bin/bash", "-c", "while true; do echo Apache httpd; sleep 5; done"]  # Run continuously
+          env:
+            - name: MY_NAME
+              value: "Abu Naiim"     # Environment variable inside container
+          ports:
+            - containerPort: 80       # Exposed container port
+
+      restartPolicy: Always           # Always restart containers if they exit
+     
+      nodeSelector:                   # Schedule Pods only on nodes with this label
+        hardware: t2-medium
+
+
+Apply and verify:
+kubectl apply -f rcpod.yaml 
+kubectl get rc
+kubectl describe rc myreplica 
+
+Delete to check:
+kubectl get pods
+kubectl delete pod myreplica-h5cnk
+
+
+Scaling:
+kubectl get pods --show-labels 
+kubectl scale --replicas=8 rc -l myname=my_naiim      # Scale up 
+kubectl scale --replicas=2 rc -l myname=my_naiim      # Scale down 
+Check:
+kubectl get rc
+kubectl get pods
+
+Delete:
+kubectl delete -f rcpod.yaml
+kubectl get pods 

@@ -1,0 +1,39 @@
+--------------- Syslog - System Logs ---------------
+সিস্টেম ইভেন্ট, Error, অথবা Service message কে centralized করার জন্য syslog system ব্যবহৃত হয়
+
+Log = log is record kept by linux system/kernel for administrators for monitoring and troubleshooting.
+Linux stores all the logs in a particular directory
+
+syslog configuration file: /etc/rsyslog.conf
+vi /etc/rsyslog.conf
+
+ls /var/log/
+cat /var/log/messages      → সিস্টেম ও kernel messages
+cat /var/log/secure        → authentication / security logs
+cat /var/log/cron          → cron jobs execution
+cat /var/log/httpd/        → Apache logs
+cat /var/log/boot.log      → boot process logs
+
+For httpd:
+cat /var/log/httpd/access_log   → কেউ কোন পেজ access করেছে
+cat /var/log/httpd/error_log    → কোন error বা warning
+
+Date ways:
+# cat /var/log/boot.log-20250828
+# cat /var/log/messages-20250828
+
+অতীতের boot log দেখার জন্য rotated ফাইল বা journalctl ব্যবহার করতে হবে:
+journalctl
+journalctl -xe     # with extra details
+journalctl -n 5
+journalctl --since 10:45:00 --until 13:45:00 # time to time 
+
+
+systemctl:
+systemctl status sshd 
+
+SSH সার্ভিস চালু আছে কি না
+Active/Inactive/Failed status
+PID, memory, process info
+সর্বশেষ log messages
+

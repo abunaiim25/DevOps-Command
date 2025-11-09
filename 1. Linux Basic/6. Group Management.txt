@@ -1,0 +1,70 @@
+--------------- Group Management ---------------
+
+/etc/group === Details or information about groups
+group_name:passowrd:group_id:group_members
+
+/etc/gshadow === Secure group information
+group_name:passowrd:list_of_group_admins:list_of_group_members
+
+groupadd === Add a new group
+groupmod === Modify an existing group 
+groupdel === Delete a group 
+gpasswd === Manage groups
+
+here, for my work test is my group 
+-----groupadd-----
+# groupadd --help
+
+# tail -n 10 /etc/gshadow
+
+# groupadd test
+  tail -n 10 /etc/group 
+# groupadd -g 50000 test2 
+  tail -n 10 /etc/gshadow
+# groupadd -p 12345 test3
+  tail -n 10 /etc/gshadow
+# groupadd -r test4 === System group: -r, 1–999
+  tail -n 10 /etc/group 
+
+-----groupmod-----
+# groupmod --help
+
+# groupmod -n newname test === Name change
+  grep newname /etc/group
+# groupmod -p 123 test3
+  tail -n 10 /etc/gshadow
+
+-----gpasswd-----
+# gpasswd test3 === Encrypted password
+  grep test3 /etc/gshadow
+# gpasswd -r test3 === Password remove
+  
+-----groupdel-----
+# groupdel -f user10 === group's user remove 
+  tail -n 30 /etc/group 
+# groupdel test4 === group remove
+# groupdel -f test4 === group remove
+# groupdel -f user1 === user remove
+# userdel -rf user1 === directory remove
+  
+-----Add user on group-----
+# tail -n 10 /etc/group
+# gpasswd -a user11 test2 
+  id user11
+gpasswd → group membership ম্যানেজ করার জন্য ব্যবহার হয়।
+-a → add user অর্থাৎ কোনো ইউজারকে group এ যোগ করা।
+user1 → যাকে group এ যোগ করা হচ্ছে।
+test2 → যেই group এ তাকে যোগ করা হবে।
+
+Remove user on group:
+# gpasswd -d user11 test2
+  id user11
+  
+-----Create Admin-----
+# gpasswd -A user1,user10,user11 test3 === list_of_group_admins
+  grep test3 /etc/gshadow
+  
+-----Create Members-----
+# gpasswd -M raj,naiim,rayhan test3 === list_of_group_members
+  grep test3 /etc/gshadow
+  

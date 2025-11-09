@@ -1,0 +1,7 @@
+# fork project of my github
+cmd open
+cd ../..  === C:\>
+git clone https://github.com/abunaiim25/time-tracker.git
+dir
+cd time-tracker
+mvn clean package === convert to machine code

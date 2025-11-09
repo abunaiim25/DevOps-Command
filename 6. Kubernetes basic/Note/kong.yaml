@@ -1,0 +1,113 @@
+gateway:
+  env:
+    # Nginx proxy tuning
+    nginx_proxy_proxy_buffer_size: 256k
+    nginx_proxy_proxy_buffers: 16 256k
+    nginx_proxy_proxy_busy_buffers_size: 512k
+
+    # Lua sandbox for plugins
+    untrusted_lua_sandbox_requires: resty.template, kong.tools.utils, resty.http, cjson, resty.openidc
+
+    # Listen ports
+    admin_listen: 0.0.0.0:8001, 0.0.0.0:8444 http2 ssl
+    proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 http2 ssl
+    status_listen: 0.0.0.0:8100
+
+  proxy:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8000"
+      nodePort: 30086
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8443 http2"
+      nodePort: 32222
+
+  admin:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8001"
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8444"
+    ingress:
+      enabled: true
+      annotations:
+        kubernetes.io/ingress.class: "nginx"
+        nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8"
+      # Optional TLS secret (create beforehand)
+      # tls:
+      #   - hosts:
+      #       - admin.example.com
+      #     secretName: kong-admin-tls
+
+  status:
+    enabled: true
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8100"
+
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: monitoring
+    prometheus:
+      enabled: true
+    port: 8100
+
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 60
+      - type: Resource
+        resource:
+          name: memory
+          target:
+            type: Utilization
+            averageUtilization: 70
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - kong
+          topologyKey: "kubernetes.io/hostname"
+
+  livenessProbe:
+    httpGet:
+      path: /status
+      port: 8100
+    initialDelaySeconds: 10
+    periodSeconds: 10
+
+  readinessProbe:
+    httpGet:
+      path: /status
+      port: 8100
+    initialDelaySeconds: 5
+    periodSeconds: 10

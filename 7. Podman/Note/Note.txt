@@ -1,0 +1,53 @@
+podman exec -it tomcat-https sh
+Default log:
+ls /opt/tomcat/logs/
+
+
+Step: 1
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v ./tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c "/opt/tomcat/bin/catalina.sh run >> /opt/tomcat/logs/stdout.log 2>> /opt/tomcat/logs/stderr.log"
+
+
+Step: 2
+vi /opt/tomcat/bin/catalina.sh
+
+Replace: "$CATALINA_OUT" 2>&1 &
+New:     >> "$CATALINA_BASE"/logs/stdout.log 2>> "$CATALINA_BASE"/logs/stderr.log
+
+
+Step: 3
+systemctl restart tomcat
+
+
+Step: 4
+sudo vi /etc/systemd/system/tomcat.service
+
+[Unit]
+Description=Tomcat Podman Container
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a tomcat-https
+ExecStop=/usr/bin/podman stop -t 10 tomcat-https
+
+[Install]
+WantedBy=multi-user.target
+
+
+Step: 5
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl restart tomcat
+
+
+Step: 6
+podman exec -it tomcat-https sh
+ls /opt/tomcat/logs/
+tail -f /opt/tomcat/logs/stdout.log
+tail -f /opt/tomcat/logs/stderr.log

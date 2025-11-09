@@ -1,0 +1,484 @@
+# Kubernetes Cluster with cilium:
+
+**Crucial Step: Disable Swap on All Nodes**
+
+```bash
+sudo swapoff -a
+
+nano /etc/fstab
+sudo sed -i '/ swap / s/^\\(.*\\)$/#\\1/g' /etc/fstab
+#turn off automatically mounted at system startup.
+
+```
+
+**Step 1:**
+
+**Containerd Install prerequisites**
+
+Before installing containerd, set the following kernel parameters on all the nodes.
+
+Using this command edit this file
+
+```bash
+nano /etc/modules-load.d/containerd.conf
+
+```
+
+Add on this file
+
+```bash
+overlay
+br_netfilter
+
+```
+
+Load modules
+
+```bash
+sudo modprobe overlay
+sudo modprobe br_netfilter
+
+```
+
+```bash
+nano /etc/sysctl.d/99-kubernetes-cri.conf
+
+```
+
+Add this command in **99-kubernetes-cri.conf** file
+
+```bash
+net.bridge.bridge-nf-call-iptables = 1
+net.ipv4.ip_forward = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+
+```
+
+To make above changes into the effect, run
+
+```bash
+sudo sysctl --system
+
+```
+
+**Step 2:**
+
+**Install Containerd**
+
+```bash
+sudo apt update
+sudo apt install containerd -y
+
+```
+
+**configuration file for Containerd**
+
+```bash
+sudo mkdir -p /etc/containerd
+
+```
+
+Default Containerd configuration generated and saved to the this file
+
+```bash
+containerd config default | sudo tee /etc/containerd/config.toml
+
+```
+
+Edit this file
+
+```bash
+nano /etc/containerd/config.toml
+
+```
+
+Find the following section in **config.toml** file
+
+```bash
+[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+
+```
+
+And set the value of `SystemdCgroup` to  `false` → `true`
+
+**Restart Containerd**
+
+```bash
+sudo systemctl restart containerd
+
+```
+
+```json
+sudo apt update
+sudo apt install etcd-client -y
+
+etcdctl version
+```
+
+Step-3:
+
+Install Kubernetes:
+
+These instructions are for Kubernetes v1.33
+
+1. Update the `apt` package index and install packages needed to use the Kubernetes `apt` repository:
+    
+    ```bash
+    sudo apt-get update
+    *# apt-transport-https may be a dummy package; if so, you can skip that package*
+    sudo apt-get install -y apt-transport-https ca-certificates curl gpg
+    
+    ```
+    
+2. Download the public signing key for the Kubernetes package repositories. The same signing key is used for all repositories so you can disregard the version in the URL:
+    
+    ```bash
+    *# If the directory `/etc/apt/keyrings` does not exist, it should be created before the curl command, read the note below.# sudo mkdir -p -m 755 /etc/apt/keyrings*
+    curl -fsSL <https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key> | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    
+    ```
+    
+
+**Note:In releases older than Debian 12 and Ubuntu 22.04, directory `/etc/apt/keyrings` does not exist by default, and it should be created before the curl command.**
+
+1. Add the appropriate Kubernetes `apt` repository. Please note that this repository have packages only for Kubernetes 1.33; for other Kubernetes minor versions, you need to change the Kubernetes minor version in the URL to match your desired minor version (you should also check that you are reading the documentation for the version of Kubernetes that you plan to install).
+    
+    ```bash
+    # This overwrites any existing configuration in /etc/apt/sources.list.d/kubernetes.list
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] <https://pkgs.k8s.io/core:/stable:/v1.33/deb/> /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+    
+    ```
+    
+2. Update the `apt` package index, install kubelet, kubeadm and kubectl, and pin their version:
+    
+    ```bash
+    sudo apt-get update
+    sudo apt-get install -y kubelet kubeadm kubectl
+    sudo apt-mark hold kubelet kubeadm kubectl
+    
+    ```
+    
+3. (Optional) Enable the kubelet service before running kubeadm:
+    
+    ```bash
+    sudo systemctl enable --now kubelet
+    
+    ```
+    
+
+Step 4: Hosts Configurations:
+
+**Set hostnames On the master node**
+
+```bash
+sudo hostnamectl set-hostname "master1"
+
+```
+
+**Set hostnames On the worker node**
+
+```bash
+sudo hostnamectl set-hostname "worker1"
+sudo hostnamectl set-hostname "worker2"
+
+```
+
+Set the hostnames in the **/etc/hosts** file on all the nodes
+
+```bash
+sudo nano /etc/hosts #Edit host file and add below command in hosts file
+192.168.60.14 master1
+192.168.60.15 worker1
+192.168.60.16 worker2
+
+```
+
+**Deploy the Kubernetes cluster (Now Only for Master Node Step)**
+
+```bash
+sudo kubeadm init --pod-network-cidr=10.10.0.0/16
+
+```
+
+**Join the Worker Nodes to the Cluster.** when Kubernetes control plane initialized successfully it gives us token for join workers something like below
+
+```bash
+kubeadm join 192.168.60.14:6443 --token nx6mn3.4hhph89iemwxmtvu \\
+	--discovery-token-ca-cert-hash sha256:3158228b19ba7196a0ffa1c310d4d75f5575280526953151d2159bacdea2d7e6
+
+```
+
+Copy the **kubeadm join** from the end of the above output. We will be using this command to add worker nodes to our cluster.
+
+**Configure kubectl**
+
+```bash
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+```
+
+Step5: Cilium Installation:
+
+```bash
+curl -LO <https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz>
+
+```
+
+Then extract the downloaded file to your `/usr/local/bin` directory with the following command:
+
+```bash
+sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+rm cilium-linux-amd64.tar.gz
+
+```
+
+After running the above commands, you can now install Cilium with the following command:
+
+```bash
+cilium install
+
+```
+
+Step-6: Joining Worker nodes:
+
+```bash
+kubeadm join 192.168.60.14:6443 --token nx6mn3.4hhph89iemwxmtvu \\
+	--discovery-token-ca-cert-hash sha256:3158228b19ba7196a0ffa1c310d4d75f5575280526953151d2159bacdea2d7e6
+
+```
+
+**Step-7: Running Hubble Relay:**
+Edit your existing `cilium-values.yaml` or create a new one:
+
+```bash
+hubble:
+  enabled: true
+  relay:
+    enabled: true
+  ui:
+    enabled: true
+
+```
+
+Add the Helm repository and install prerequisites:
+
+```bash
+sudo apt update
+sudo apt install -y curl apt-transport-https
+curl <https://baltocdn.com/helm/signing.asc> | sudo apt-key add -
+sudo apt-get install -y software-properties-common
+sudo apt-add-repository "deb <https://baltocdn.com/helm/stable/debian/> all main"
+
+```
+
+Install Helm:
+
+```bash
+sudo apt update
+sudo apt install -y helm
+
+```
+
+Verify Helm installation:
+
+```bash
+helm version
+
+```
+
+Add the Cilium Helm repo
+
+```bash
+helm repo add cilium <https://helm.cilium.io/>
+
+```
+
+Update Helm repos to fetch latest charts
+
+```bash
+helm repo update
+
+```
+
+Then run your upgrade command again
+
+```bash
+helm upgrade cilium cilium/cilium -n kube-system -f cilium-values.yaml
+
+```
+
+Hubble Node Expose:
+
+```bash
+kubectl patch svc hubble-ui -n kube-system -p '{"spec": {"type": "NodePort"}}'
+
+```
+
+Then confirm the new port with:
+
+```bash
+kubectl get svc hubble-ui -n kube-system
+
+```
+
+You’ll now see something like:
+
+```bash
+
+NAME         TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)           AGE
+hubble-ui    NodePort   10.108.64.8    <none>        80:32xxx/TCP      161m
+
+```
+
+Kong Installations:
+
+```bash
+helm repo add kong <https://charts.konghq.com>
+helm repo update
+kubectl create namespace kong-gateway
+helm install kong kong/ingress -n kong-gateway -f values.yaml
+
+```
+
+```sql
+gateway:
+  env:
+    nginx_proxy_proxy_buffer_size: 128k
+    nginx_proxy_proxy_buffers: 4 128k
+    nginx_proxy_proxy_busy_buffers_size: 256k
+    header: "off"
+    untrusted_lua_sandbox_requires: resty.template, kong.tools.utils, resty.http, cjson, resty.openidc
+    admin_listen: 0.0.0.0:8001, 0.0.0.0:8444 http2 ssl
+    proxy_listen: 0.0.0.0:8000, 0.0.0.0:8443 http2 ssl
+    status_listen: 0.0.0.0:8100
+
+  proxy:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8000"
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8443 http2"
+      nodePort: 32222
+
+  admin:
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8001"
+    tls:
+      enabled: true
+      listen:
+        - "0.0.0.0:8444"
+
+  status:
+    enabled: true
+    http:
+      enabled: true
+      listen:
+        - "0.0.0.0:8100"
+
+```
+
+Argocd Installations:
+
+```sql
+kubectl create namespace argocd
+kubectl apply -n argocd -f <https://raw.githubusercontent.com/argoproj/argo-cd/v3.0.1/manifests/install.yaml>
+
+source: <https://github.com/argoproj/argo-cd/releases>
+
+```
+
+Disk Add:
+
+```sql
+1. Create a Partition on /dev/sdb: fdisk /dev/sdb
+
+In fdisk, do the following:
+
+Type n (new partition)
+
+Type p (primary)
+
+Choose default values to use the whole disk
+
+Type t, then 8e (LVM type)
+
+Type w to write and exit
+
+3. Create a Physical Volume: pvcreate /dev/sdb1
+
+4. Extend the Volume Group
+Check your existing VG name (it looks like ubuntu-vg):
+Then extend: vgextend ubuntu-vg /dev/sdb1
+
+5. Extend the Logical Volume
+First, find the LV path: lvdisplay
+
+6. lvextend -l +100%FREE /dev/ubuntu-vg/ubuntu-lv
+
+7. Check filesystem: lsblk -f
+
+8. 6. Resize the Filesystem
+	If you’re using ext4: resize2fs /dev/ubuntu-vg/ubuntu-lv
+
+	If you’re using xfs: xfs_growfs /
+
+```
+
+nfs server installation:
+
+```sql
+sudo apt update
+sudo apt install nfs-kernel-server
+sudo systemctl start nfs-kernel-server.service
+sudo systemctl enable nfs-kernel-server.service
+sudo systemctl status nfs-kernel-server.service
+
+# Discovering available NFS shares
+showmount -e server_IP
+
+#Creating a Shared Folder:
+mkdir -p /mnt/k8s_nfs
+ls -ld /mnt/shared
+
+5. Setting up NFS Exports:
+sudo nano /etc/exports
+Add the following line:
+	/mnt/shared client_IP(rw,sync,no_subtree_check)
+
+6. Exporting the shared directory:
+sudo exportfs -a
+
+7. Setting Permissions to the shared directory
+sudo chown -R <user>:<groupname> /mnt/shared
+sudo chmod -R 775 /mnt/shared
+ls -l /mnt
+
+```
+
+NFS Client Installations:
+
+```
+#1. Installing NFS in client systems:
+sudo apt install nfs-common
+
+#2. Mounting the Shared Directory on the Client Machine:
+sudo mkdir -p /mnt/k8s_nfs_shared
+sudo mount server_IP:/mnt/k8s_nfs /mnt/k8s_nfs_shared
+
+#3. Making the Mount Permanent:
+sudo nano /etc/fstab
+	192.168.60.15:/mnt/k8s_nfs /mnt/k8s_nfs_shared nfs defaults 0 0
+
+4. To verify the mount:
+sudo mount | grep -i nfs
+
+```
+
+##

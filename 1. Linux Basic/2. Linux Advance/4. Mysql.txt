@@ -1,0 +1,17 @@
+--------------- MySQL ---------------
+
+Installing MySQL:
+# dnf install mysql-server
+
+  systemctl start mysqld.service
+  systemctl enable mysqld.service
+  systemctl status mysqld.service
+
+  mysql -u root
+
+# mysql_secure_installation 
+  Password: My$QL2025!
+
+Configuring MySQL:
+# vi /etc/my.cnf.d/mysql-server.cnf
+  systemctl restart mysqld.service

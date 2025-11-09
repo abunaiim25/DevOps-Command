@@ -1,0 +1,5 @@
+Git:
+git --version
+git config --global user.name "abunaiim25"
+git config --global user.email "naiimabu25@gmail.com"
+git config --global --list

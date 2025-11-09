@@ -1,0 +1,270 @@
+ওকে, এবার পুরো process clean এবং copy-paste ready দিচ্ছি, যাতে **Tomcat 8 container**-এ **stdout / stderr logs আলাদা থাকে**, host-এ mirror হয়, এবং systemd থেকে auto-restart করা যায়।
+
+---
+
+# **Full Clean Setup – Tomcat Container stdout/stderr Logging**
+
+---
+
+## **Step 1: Host-এ Logs Folder তৈরি**
+
+```bash
+mkdir -p /root/logs
+```
+
+---
+
+## **Step 2: logging.properties তৈরি**
+
+Host-এ বানাও `/root/logging.properties`:
+
+```bash
+vi /root/logging.properties
+```
+
+Copy-paste করো নিচের content:
+
+```properties
+# Handlers
+handlers = 1catalina.org.apache.juli.AsyncFileHandler, \
+           2localhost.org.apache.juli.AsyncFileHandler, \
+           3manager.org.apache.juli.AsyncFileHandler, \
+           4host-manager.org.apache.juli.AsyncFileHandler, \
+           java.util.logging.ConsoleHandler
+
+# Catalina logs
+1catalina.org.apache.juli.AsyncFileHandler.level = INFO
+1catalina.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+1catalina.org.apache.juli.AsyncFileHandler.prefix = catalina.
+
+# localhost logs
+2localhost.org.apache.juli.AsyncFileHandler.level = INFO
+2localhost.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+2localhost.org.apache.juli.AsyncFileHandler.prefix = localhost.
+
+# manager logs
+3manager.org.apache.juli.AsyncFileHandler.level = INFO
+3manager.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+3manager.org.apache.juli.AsyncFileHandler.prefix = manager.
+
+# host-manager logs
+4host-manager.org.apache.juli.AsyncFileHandler.level = INFO
+4host-manager.org.apache.juli.AsyncFileHandler.directory = ${catalina.base}/logs
+4host-manager.org.apache.juli.AsyncFileHandler.prefix = host-manager.
+
+# ConsoleHandler (stderr)
+java.util.logging.ConsoleHandler.level = SEVERE
+java.util.logging.ConsoleHandler.formatter = org.apache.juli.OneLineFormatter
+```
+
+* Save & exit (`:wq`)
+
+---
+
+## **Step 3: Podman Container Run**
+
+```bash
+podman run -d --name tomcat-https \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  -v /root/logging.properties:/opt/tomcat/conf/logging.properties:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c "exec /opt/tomcat/bin/catalina.sh start >> /opt/tomcat/logs/stdout.log 2>> /opt/tomcat/logs/stderr.log"
+```
+
+> **Tip:** সব absolute path use করা হয়েছে যাতে `no such file` error না আসে।
+
+---
+
+## **Step 4: Optional – catalina.sh Modify**
+
+Container ভেতরে ঢুকো:
+
+```bash
+podman exec -it tomcat-https sh
+vi /opt/tomcat/bin/catalina.sh
+```
+
+* খুঁজো:
+
+```bash
+"$CATALINA_OUT" 2>&1 &
+```
+
+* Replace করো:
+
+```bash
+exec "$_RUNJAVA" $JAVA_OPTS \
+  -classpath "$CLASSPATH" \
+  org.apache.catalina.startup.Bootstrap start \
+  >> "$CATALINA_BASE/logs/stdout.log" \
+  2>> "$CATALINA_BASE/logs/stderr.log"
+```
+
+* Save & exit (`:wq`)
+* Container restart:
+
+```bash
+podman restart tomcat-https
+```
+
+---
+
+## **Step 5: Systemd Service (Host)**
+
+```bash
+sudo vi /etc/systemd/system/tomcat.service
+```
+
+Paste:
+
+```ini
+[Unit]
+Description=Tomcat Podman Container
+After=network.target
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/podman start -a tomcat-https
+ExecStop=/usr/bin/podman stop -t 10 tomcat-https
+
+[Install]
+WantedBy=multi-user.target
+```
+
+* Reload systemd:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable tomcat
+sudo systemctl restart tomcat
+```
+
+---
+
+## **Step 6: Verify Logs**
+
+Container ভেতরে:
+
+```bash
+podman exec -it tomcat-https sh
+cd /opt/tomcat/logs
+ls
+```
+
+* দেখতে হবে:
+
+```
+catalina.out
+stdout.log
+stderr.log
+localhost_access_log.*
+```
+
+* Check:
+
+```bash
+tail -f stdout.log   # Normal logs
+tail -f stderr.log   # Only SEVERE / ERROR
+```
+
+* Host-এও `/root/logs` mirror হবে।
+
+---
+
+## ✅ **Extra Tips**
+
+1. Webapp log4j / logback → যদি ConsoleAppender use করে → stdout বা stderr অনুযায়ী যাবে।
+2. AsyncFileHandler level = INFO → সব normal logs capture করবে।
+3. ConsoleHandler level = SEVERE → শুধুমাত্র critical error stderr-এ যাবে।
+
+---
+
+এই setup একবারে copy-paste করে run করলে **Tomcat container stdout/stderr clean এবং host-এ mirror** হবে।
+
+---
+
+যদি চাও, আমি আরও একটা **full verification command set** বানিয়ে দিতে পারি, যা run করে দেখাবে log allocation ঠিক আছে কি না।
+
+চাই কি বানাই?
+podman run -d --name tomcat-2 \
+  -p 8443:8443 \
+  -v /home/naiim/apache-8.0.53:/opt/tomcat:Z \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  docker.io/eclipse-temurin:8-jdk \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+
+
+podman run -d --name tomcat-2 \
+  -p 8443:8443 \
+  -v /home/naiim/apache-8.0.53:/opt/tomcat:Z \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  docker.io/eclipse-temurin:8-jdk -- \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+
+podman run -d --name tomcat-2 \
+  -p 8443:8443 \
+  -v /home/naiim/apache-8.0.53:/opt/tomcat:Z \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  docker.io/eclipse-temurin:8-jdk \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+
+
+
+
+
+
+
+
+podman run -d --name tomcat-3 \
+  --network mynet \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -p 8443:8443 \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  docker-reg.oss.net.bd/tomcat.8.0.53:v1 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+
+
+
+
+  podman run -d --name tomcat-2 \
+  --network mynet \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  tomcat:8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+podman run -d --name tomcat-2 \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  /home/naiim/apache-8.0.53 \
+  /bin/sh -c '/opt/tomcat/bin/catalina.sh run 2>&1 | tee /opt/tomcat/logs/stdout.log | grep -E "ERROR|SEVERE|WARNING|FATAL|EXCEPTION|FAIL" > /opt/tomcat/logs/stderr.log'
+
+\
+
+podman run -d --name tomcat-2 \
+  --network mynet \
+  -p 8443:8443 \
+  -v /root/tomcat-conf/server.xml:/opt/tomcat/conf/server.xml:Z \
+  -v /root/keystore.jks:/opt/tomcat/conf/keystore.jks:Z \
+  -v /root/logs:/opt/tomcat/logs:Z \
+  /home/naiim/tomcat-8.0.53 \
+  /bin/sh -c 'mkdir -p /opt/tomcat/logs && /opt/tomcat/bin/catalina.sh run > >(tee /opt/tomcat/logs/stdout.log) 2> >(tee /opt/tomcat/logs/stderr.log >&2)'
+

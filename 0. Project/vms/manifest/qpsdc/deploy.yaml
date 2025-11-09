@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qpsdc
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qpsdc
+  template:
+    metadata:
+      labels:
+        app: qpsdc
+    spec:
+      containers:
+        - name: tomcat
+          image: mdnaiim/tomcat-based-img
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: qpsdc-data
+              mountPath: /opt/tomcat/webapps
+      volumes:
+        - name: qpsdc-data
+          persistentVolumeClaim:
+            claimName: qpsdc-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qpsdc-service
+  namespace: demo
+spec:
+  selector:
+    app: qpsdc
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: qpsdc-ingress
+  namespace: demo
+  annotations:
+    konghq.com/protocols: "http,https"
+    konghq.com/strip-path: "false"
+spec:
+  ingressClassName: kong
+  rules:
+    - host: 
+      http:
+        paths:
+          - path: /qpsdc
+            pathType: Prefix
+            backend:
+              service:
+                name: qpsdc-service
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qpsdc-service
+                port:
+                  number: 8080

@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: laravel-schedule
+spec:
+  schedule: "*/5 * * * *" # every 5 minutes (example)
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: laravel-sa
+          restartPolicy: OnFailure
+          containers:
+            - name: schedule-run
+              image: your-docker-repo/laravel-app:latest
+              command: ["php", "artisan", "schedule:run"]
+              env:
+                - name: DB_HOST
+                  value: mysql
+                - name: DB_DATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: database
+                - name: DB_USERNAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: username
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: mysql-secret
+                      key: password

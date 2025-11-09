@@ -1,0 +1,101 @@
+sudo date -s "2025-10-12 10:30:00"
+
+export KUBECONFIG=/var/lib/k0s/pki/admin.conf
+
+kubectl delete pod -n argocd argocd-repo-server-6f778b9b8f-lmtx2  --grace-period=0 --force
+kubectl delete pod -n kubernetes-dashboard kubernetes-dashboard-6c7b75ffc-bs586 --grace-period=0 --force
+kubectl delete pod -n kube-system metrics-server-67bc669cf4-rtvj5 --grace-period=0 --force
+kubectl delete pod -n kong kong-kong-8466b7879-skbmn --grace-period=0 --force
+kubectl delete pod -n default db-7f5444f5b7-92drz --grace-period=0 --force
+kubectl delete pod -n jenkins jenkins-0 --grace-period=0 --force
+
+kubectl delete pod --all --all-namespaces 
+kubectl delete pod --all --all-namespaces --grace-period=0 --force
+kubectl delete pods -n kube-system --all
+
+kubectl logs -f  keycloak-65794cc5d5-ktpwz -n kube-system
+kubectl logs -f  keycloak-65794cc5d5-ktpwz -n keycloak
+
+kubectl delete pod --all -n argocd --grace-period=0 --force
+kubectl delete pod --all -n default
+kubectl delete pod --all -n kube-system --grace-period=0 --force
+kubectl delete pod --all -n demo
+kubectl delete pod --all -n agrobd-app --grace-period=0 --force
+kubectl delete pod --all -n keycloak --grace-period=0 --force
+kubectl delete pod --all -n qpsdc --grace-period=0 --force
+
+kubectl delete pod -n kube-system -l k8s-app=cilium --grace-period=0 --force
+
+kubectl delete pvc keycloak-theme-pvc keycloak-provider-pvc -n keycloak --grace-period=0 --force
+
+
+kubectl describe pod argocd-application-controller-0 -n argocd
+kubectl describe pod argocd-redis-secret-init-v7zgg -n argocd
+kubectl describe pod cilium-operator-b8f978b9c-pvddk -n kube-system
+kubectl describe pod kong-kong-8466b7879-jlnbn -n kong
+kubectl describe pod keycloak-5c9bf74cc8-54j4d -n keycloak
+
+
+kubectl edit pod kong-kong -n kong
+kubectl edit deployment cilium-operator -n kube-system
+
+
+kubectl rollout restart daemonset cilium -n kube-system
+
+
+sudo rm -rf /tmp/*
+sudo swapoff -a
+
+
+sudo ss -tulpn | grep 6443
+
+
+helm uninstall cilium -n kube-system
+
+kubectl -n kube-system delete pod -l io.cilium/app=operator --force --grace-period=0
+kubectl -n kube-system delete pod -l io.cilium/app=hubble --force --grace-period=0
+kubectl -n kube-system delete pod -l k8s-app=cilium --force --grace-period=0
+kubectl -n kube-system delete pod -l k8s-app=hubble --force --grace-period=0
+
+docker ps
+
+
+kubectl exec -it db-7f5444f5b7-mqvc2 -- /bin/bash
+psql -U postgres 
+
+
+permanent delete: not recreate pod
+kubectl delete deployment --all -n default
+kubectl delete rs --all -n default
+
+helm uninstall argocd -n argocd --force --grace-period=0
+kubectl delete ns kong --force --grace-period=0
+
+
+
+kube-router permanent remove:
+kubectl delete ds kube-router -n kube-system --ignore-not-found
+kubectl delete pod -n kube-system kube-router-9j52t --grace-period=0 --force
+Restart:
+kubectl delete pod -n kube-system konnectivity-agent-b2km2  --grace-period=0 --force
+kubectl delete pod --all -n kube-system --grace-period=0 --force
+
+
+kubectl exec -n argocd argocd-repo-server-6f778b9b8f-lmtx2 -- curl -v https://github.com/abunaiim25/Agrobd-Docker-k8s-deploy.git
+kubectl exec -it agrobd-laravel-app-5bc59d6db8-b5xq5 -n agrobd-app -- /bin/bash
+
+argocd repo add https://github.com/abunaiim25/Agrobd-Docker-k8s-deploy.git \
+  --username abunaiim25 \
+  --password <your-personal-access-token>
+
+
+kubectl patch svc kong-gateway-proxy -n kong-gateway   -p '{"spec":{"type":"LoadBalancer"}}'
+kubectl patch svc kong-gateway-proxy -n kong-gateway   -p '{"spec":{"type":"NodePort"}}'
+
+
+
+kubectl delete pvc qpsdc-pvc -n demo --force --grace-period=0
+kubectl delete pv qpsdc-pv --force --grace-period=0
+
+kubectl patch pv qpsdc-pv -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl patch pvc qpsdc-pvc -n demo -p '{"metadata":{"finalizers":[]}}' --type=merge

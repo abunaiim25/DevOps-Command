@@ -1,0 +1,37 @@
+=============================REMOVE FOR YAML====================================
+kubectl delete deployment qpe -n demo
+kubectl get pod -n demo
+
+kubectl delete svc qpe-service -n demo
+kubectl get svc -n demo
+
+kubectl delete ingress qpe-ingress -n demo
+kubectl get ingress -n demo
+
+
+Delete: PVC, PV
+kubectl patch pvc qpe-pvc -n demo -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl delete pvc qpe-pvc -n demo --force --grace-period=0
+kubectl get pvc -n demo
+
+kubectl patch pv qpe-pv -p '{"metadata":{"finalizers":[]}}' --type=merge
+kubectl delete pv qpe-pv --force --grace-period=0
+kubectl get pv -n demo
+---------------------------------------------------------------------------------
+
+Host vm to pod
+kubectl cp /home/naiim/vms/war_file/amni.zip -n demo qpe-69cf9869cd-plghq:/opt/tomcat/webapps/
+
+Reload:
+kubectl rollout restart deployment qserver47 -n demo
+
+
+-----------------------------------------------------------
+###--- lens connection:
+sudo k0s kubeconfig admin
+sudo k0s kubeconfig admin > ~/k0s-admin.conf
+ls -l ~/k0s-admin.conf
+cat /root/k0s-admin.conf
+
+add this on lens
+cat ./config

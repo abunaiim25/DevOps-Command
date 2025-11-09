@@ -1,0 +1,81 @@
+kubectl create namespace keycloak
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:22.0.1
+          args: ["start-dev"]
+          ports:
+            - containerPort: 8080
+          env:
+            # Admin credentials
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: "adminpassword"
+            # MariaDB Database Config
+            - name: KC_DB
+              value: "mysql"   # <-- Default DB type; for MariaDB use "mysql"
+            - name: KC_DB_URL_HOST
+              value: "192.168.10.203"
+            - name: KC_DB_URL_PORT
+              value: "3306"
+            - name: KC_DB_USERNAME
+              value: "naiim"
+            - name: KC_DB_PASSWORD
+              value: "12345"
+            - name: KC_DB_DATABASE
+              value: "keycloak"
+
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  type: NodePort
+  selector:
+    app: keycloak
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30055   # <-- Browser e access er jonno
+
+
+
+kubectl apply -f keycloak.yaml
+
+
+https://192.168.10.203:30055/
+
+connect with sqlyug:
+Host Address: 192.168.10.203 
+user: naiim 
+password: 12345 
+database name: keycloak
+
+mysql -h 192.168.10.203 -P 3306 -u naiim -p
+# Password: 12345
+
+SHOW DATABASES;
+USE keycloak;
+SHOW TABLES;

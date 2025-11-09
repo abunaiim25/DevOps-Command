@@ -1,0 +1,34 @@
+# =============================
+# Stage 1: Maven Build (Build Stage)
+# =============================
+FROM maven:3.9.2-eclipse-temurin-20 AS build
+
+# Working directory
+WORKDIR /app
+
+# Copy pom.xml first for caching dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copy source code
+COPY src ./src
+
+# Build the jar
+# jar location: /app/target/data-hub.jar
+RUN mvn clean package -DskipTests
+
+# =============================
+# Stage 2: Run Stage (Runtime)
+# =============================
+FROM eclipse-temurin:20-jdk
+
+WORKDIR /app
+
+# Copy jar from build stage
+COPY --from=build /app/target/data-hub.jar ./data-hub.jar
+
+# Expose port for Data Hub
+EXPOSE 8080
+
+# Command to run the jar
+ENTRYPOINT ["java", "-jar", "data-hub.jar"]

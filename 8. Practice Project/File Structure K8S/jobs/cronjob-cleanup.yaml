@@ -1,0 +1,16 @@
+# cronjob-cleanup.yaml placeholder
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-job
+spec:
+  schedule: "0 2 * * *"  # প্রতি দিন রাত ২ টায়
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: cleanup
+              image: busybox
+              command: ["sh", "-c", "echo Cleaning up temp files"]
+          restartPolicy: OnFailure

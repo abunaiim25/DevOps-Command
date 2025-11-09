@@ -1,0 +1,207 @@
+একদম পারফেক্ট ভাই 😎
+তুমি basically চাও → **Keycloak + Database (PostgreSQL)** Kubernetes-এ deploy করতে **Helm** ব্যবহার করে।
+চলো একদম practical way-তে ধাপে ধাপে দেখি কিভাবে করা যায় 💥
+
+---
+
+## 🚀 লক্ষ্য
+
+তুমি একটা Kubernetes ক্লাস্টারে **Keycloak** install করবে,
+যেখানে database (PostgreSQL) হবে **Helm chart এর মধ্যেই** configure করা।
+
+---
+
+## 🧱 Step 1: Prerequisites
+
+প্রথমে নিশ্চিত করো নিচের জিনিসগুলো ready আছে:
+
+```bash
+kubectl version --client
+helm version
+```
+
+Cluster ready কিনা দেখো:
+
+```bash
+kubectl get nodes
+```
+
+---
+
+## 🧰 Step 2: Namespace তৈরি করো
+
+```bash
+kubectl create namespace keycloak
+```
+
+---
+
+## 📦 Step 3: Bitnami Helm Repo যোগ করো
+
+Bitnami-এর chart-গুলো stable ও production-ready।
+
+```bash
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+```
+
+---
+
+## ⚙️ Step 4: Custom Configuration (values.yaml)
+
+একটা `values.yaml` ফাইল তৈরি করো 👇
+
+```yaml
+# values.yaml
+auth:
+  adminUser: admin
+  adminPassword: admin123
+
+# PostgreSQL configuration (internal)
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: keycloak
+    username: keycloak
+    password: keycloakpass
+    database: keycloakdb
+
+# Service expose type
+service:
+  type: LoadBalancer
+  ports:
+    http: 8080
+    https: 8443
+
+# Optional resource limit (good practice)
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 1Gi
+    cpu: 500m
+
+# Optional: Enable Ingress if you want domain-based access
+ingress:
+  enabled: false  # later true korbe jodi nginx ingress thake
+```
+
+---
+
+## 🚀 Step 5: Helm দিয়ে Install করো
+
+এখন সরাসরি deploy করো 👇
+
+```bash
+helm install keycloak bitnami/keycloak \
+  --namespace keycloak \
+  -f values.yaml
+```
+
+---
+
+## 🔍 Step 6: Check Deployment Status
+
+Pods এবং Services চেক করো:
+
+```bash
+kubectl get pods -n keycloak
+kubectl get svc -n keycloak
+```
+
+✅ Example output:
+
+```
+NAME                         READY   STATUS    RESTARTS   AGE
+keycloak-0                   1/1     Running   0          2m
+keycloak-postgresql-0        1/1     Running   0          2m
+```
+
+তাহলে বুঝে নাও — Keycloak এবং PostgreSQL দুটোই ঠিকঠাক চলছে! 🎯
+
+---
+
+## 🌐 Step 7: Access the Keycloak UI
+
+যদি LoadBalancer ব্যবহার করো (যেমন cloud cluster হলে):
+
+```bash
+kubectl get svc -n keycloak
+```
+
+তাহলে এরকম কিছু দেখবে 👇
+
+```
+NAME       TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
+keycloak   LoadBalancer   10.96.1.12     34.67.123.45     8080:30256/TCP   3m
+```
+
+এখন browser এ যাও:
+
+```
+http://<EXTERNAL-IP>:8080
+```
+
+Login করো 👇
+
+```
+Username: admin
+Password: admin123
+```
+
+---
+
+## 🧠 Step 8 (Optional): External Database চাইলে
+
+যদি তুমি external PostgreSQL বা MySQL use করতে চাও,
+তাহলে internal PostgreSQL disable করে external database info দাও 👇
+
+```bash
+postgresql:
+  enabled: false
+
+externalDatabase:
+  host: mydb-host
+  port: 5432
+  user: keycloak
+  password: keycloakpass
+  database: keycloakdb
+```
+
+তারপর redeploy করো 👇
+
+```bash
+helm upgrade keycloak bitnami/keycloak -n keycloak -f values.yaml
+```
+
+---
+
+## ✅ Step 9: Verify Connectivity
+
+Keycloak log দেখতে পারো:
+
+```bash
+kubectl logs -f keycloak-0 -n keycloak
+```
+
+PostgreSQL pod log দেখতে:
+
+```bash
+kubectl logs -f keycloak-postgresql-0 -n keycloak
+```
+
+---
+
+## 🔐 Final Result
+
+🎉 তোমার Kubernetes-এ এখন Keycloak চলবে PostgreSQL database সহ, Helm দিয়ে একদম clean deploy করা।
+`keycloak` namespace-এ দুইটা pod থাকবে —
+
+* `keycloak-0` → Keycloak service
+* `keycloak-postgresql-0` → PostgreSQL database
+
+---
+
+তুমি কি চাও আমি এখন এই setup-এর সঙ্গে একটা **Ingress + HTTPS (Let's Encrypt)** যুক্ত করে দিই,
+যাতে তুমি `https://keycloak.example.com` দিয়ে access করতে পারো production style-এ?

@@ -1,0 +1,11 @@
+pipeline {
+  agent any
+  stages {
+    stage('Checkout') { steps { git url: 'https://your-repo.git' } }
+    stage('Deploy CronJobs') {
+      steps {
+        sh 'kubectl apply -f DEPLOYMENT/jobs/cronjob-schedule.yaml'
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+BIDA-OSS-V2/
+│
+├── .git/
+├── .gitignore
+├── .env
+├── README.md
+│
+├── jenkins/
+│   ├── jenkinsfile
+│   ├── jenkinsfile_cron.py
+│   └── jenkinsfile_training.py
+│
+├── docker/
+│   ├── Dockerfile.baseimage
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   └── docker-compose.override.yml
+│
+├── deployment/
+│   ├── bida-moha-api/
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   └── ingress.yaml
+│   │
+│   ├── bida-ui/
+│   │   ├── deployment.yaml
+│   │   ├── service.yaml
+│   │   └── ingress.yaml
+│   │
+│   └── bida-db/
+│       ├── pvc.yaml
+│       └── configmap.yaml
+│
+├── src/
+│   ├── api/
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   │   └── utils/
+│   ├── web/
+│   │   ├── package.json
+│   │   └── public/
+│   └── scripts/
+│       └── build.sh
+│
+├── configs/
+│   ├── appsettings.json
+│   ├── nginx.conf
+│   └── gunicorn.conf.py
+│
+└── developer_observation.txt

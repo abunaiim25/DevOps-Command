@@ -1,0 +1,103 @@
+--------------- Special Permission ---------------
+
+1. SUID: If a file has SUID permission, then the file will alwase be executed with the permission of owner of the file.
+u=Owner, s=Special, x=Execute
+* Add permission for useradd:
+chmod u+s file_path
+chmod o+x file_path
+
+* Remove permission for useradd:
+chmod u-s file_path
+
+2. SGID: If a directory has SGID permission, then the group of files and directorys created in it will be same as the group of parent directory. 
+drwxr-xrwx  data   root   root
+            file1  raj    raj
+            file2  saras  saras
+            file3  raj    root
+            file4  saras  root
+			
+			Add SGID Permission:
+            chmod g+s dir_path === গ্রুপ শেয়ারিং সঠিকভাবে কাজ করবে।
+            chmod o+r dir_path
+			
+			Remove SGID Permission:
+            chmod g+s dir_path
+
+3. Sticky Bit: If a directory has sticky bit permission, then a user can not delete other users data. only the owner of file of directory can delete it.
+SGID root connection need for sticky bit.
+Symbolic Method:
+chmod o+t dir_path === Add Sticky Bit(t=Sticky Bit)
+chmod o-t dir_path === Remove Sticky Bit(t=Sticky Bit)
+
+
+Numerical Method:
+    SUID = 4
+	SGID = 2
+	Sticky Bit = 1
+	No Permission = 0
+	
+	chmod <speacial permission><numeric permission> file_path/dir_path
+	chmod 4755 data
+	
+
+----- 1. SUID -----
+# whereis useradd
+# ls -l /usr/sbin/useradd
+
+# chmod u+s /usr/sbin/useradd === if run this command, another user create other user
+  ls -l /usr/sbin/useradd === -rwsr-xr-x [If small s, permission ok]
+  su naiim
+  useradd test2
+  grep test2 /etc/passwd
+# chmod o+x /usr/sbin/useradd === Execute permissio on
+
+# chmod u-s /usr/sbin/useradd === Permission remove
+  ls -l /usr/sbin/useradd
+  
+----- 2. SGID -----
+# mkdir data === From root user
+  ls -ld data  
+  chmod 757 data
+  ls -ld data
+  
+# su naiim
+  cd data
+  touch file
+  ll
+# su raj
+  cd data
+  touch file2
+  ll 
+  
+Add SGID permission:
+# chmod g+s data === From root user
+  ls -ld data 
+# su naiim
+  cd data
+  touch file3
+  ll
+Remove SGID permission:
+# chmod g-s data === From root user
+  ls -ld data 
+
+----- 3. Sticky Bit -----
+i. Symbolic Method:
+ls -ld data
+# chmod o+t data
+ls -ld data
+rm -rf file4 === test message: Operation not permitted
+
+
+----- Numerical Method -----
+  ls -l /usr/sbin/useradd
+# chmod 4755 /usr/sbin/useradd === permission 
+  ls -l /usr/sbin/useradd
+
+# chmod 0755 /usr/sbin/useradd === remove permission
+  ls -l /usr/sbin/useradd
+  
+# chmod 2755 data
+  ls -ld data 
+  
+# chmod 0755 data
+  ls -ld data 

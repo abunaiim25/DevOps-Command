@@ -1,0 +1,42 @@
+--------------- SystemD --------------- 
+System boot থেকে শুরু করে সমস্ত service এবং process manage করা। Linux এ service/daemon control করার জন্য systemctl ব্যবহার করা হয়।
+Daemon = Daemon is a computer program that runs background services.                              
+Daemon can run background services during boot time and running condition.
+
+we can manage system services with the help of "systemctl" command
+status
+start
+stop
+restart
+reload
+enable
+disable
+systemctl start <daemon-name>
+
+sshd === Linux/Unix সিস্টেমে remote login server (অন্য কম্পিউটার থেকে secure shell (SSH) connection গ্রহণ করা।)
+# Check status of SSH service
+systemctl status sshd      # দেখাবে SSH service চলছে কি না
+
+# Stop SSH service temporarily
+systemctl stop sshd        # service বন্ধ করবে
+
+# Disable SSH service permanently (boot time এ start হবে না)
+systemctl disable sshd     # system boot এ auto start বন্ধ
+
+# Restart SSH service
+systemctl restart sshd     # service বন্ধ করে আবার start করবে
+
+# Enable SSH service permanently (boot time এ start হবে)
+systemctl enable sshd      # system boot এ auto start enable
+
+# Reload SSH service configuration without stopping
+systemctl reload sshd      # configuration পুনরায় load করবে
+
+If pkg problem:
+sudo dnf clean all
+sudo dnf reinstall -y httpd httpd-core
+sudo systemctl daemon-reload
+sudo systemctl enable --now httpd
+
+Log test:
+journalctl -xe
